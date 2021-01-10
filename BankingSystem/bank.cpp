@@ -87,6 +87,9 @@ class Bank {
 
         Account* get_account(int number) {
             for (int i = 0; i < accounts.size(); i++) {
+                if (accounts.at(i) == nullptr) {
+                    continue;
+                }
                 if (number == accounts.at(i)->get_acc_num()) {
                     return accounts.at(i);
                 }
@@ -111,11 +114,11 @@ class Bank {
         void delete_account(int accNum) {
             printf("We are deleting account: %d", accNum);
             for (int i = 0; i < numberOfAccounts; i++) {
-                if (accNum == accounts.at(i)->get_acc_num()) {
-                    free(accounts.at(i));
-                    delete accounts.at(i);
+                if (accNum == accounts.at(i)->get_acc_num()) {  
+                    accounts.erase(accounts.begin() + i);
                 }
             }
+            numberOfAccounts--;
             //handle account does not exist.
         }
 };
