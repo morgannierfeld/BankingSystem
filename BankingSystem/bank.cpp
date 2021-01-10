@@ -68,7 +68,7 @@ class Account {
 
 class Bank {
     private:
-        vector<Account*> accounts;
+        vector<Account> accounts;
         int numberOfAccounts;
 
     public:
@@ -81,17 +81,14 @@ class Bank {
 
         void add_account(int number, string holder, string type, float amount) {
             Account* newAcc = new Account(number, holder, type, amount);
-            accounts.push_back(newAcc);
+            accounts.push_back(*newAcc);
             numberOfAccounts++;
         }
 
         Account* get_account(int number) {
             for (int i = 0; i < accounts.size(); i++) {
-                if (accounts.at(i) == nullptr) {
-                    continue;
-                }
-                if (number == accounts.at(i)->get_acc_num()) {
-                    return accounts.at(i);
+                if (number == accounts.at(i).get_acc_num()) {
+                    return &accounts.at(i);
                 }
             }
             //Throw new exception if not found!
@@ -99,11 +96,11 @@ class Bank {
 
         void display_accounts(void) {
             for (int i = 0; i < accounts.size(); i++) {
-                accounts.at(i)->to_string_lookalike();
+                accounts.at(i).to_string_lookalike();
             }
         }
 
-        vector<Account*> get_accounts(void) {
+        vector<Account> get_accounts(void) {
             return accounts;
         }
 
@@ -112,10 +109,10 @@ class Bank {
         }
 
         void delete_account(int accNum) {
-            printf("We are deleting account: %d", accNum);
             for (int i = 0; i < numberOfAccounts; i++) {
-                if (accNum == accounts.at(i)->get_acc_num()) {  
+                if (accNum == accounts.at(i).get_acc_num()) {
                     accounts.erase(accounts.begin() + i);
+                    break;
                 }
             }
             numberOfAccounts--;
@@ -197,7 +194,7 @@ T run_question_sequence(string message, T (*foo)(string)) {
         string userInputStr = get_user_input();
         num = foo(userInputStr);
         if (num == -1) {
-            cout << "Please enter a valid account number.\n";
+            cout << "Please enter a valid number.\n";
             continue;
         } else if (num == 0) {
             cout << "Please enter a non-zero account number.\n";
@@ -357,10 +354,10 @@ void account_holders(Bank* bank) {
     cout << header;
     cout << banner;
     string buffer = "";
-    vector<Account*> accounts = bank->get_accounts();
+    vector<Account> accounts = bank->get_accounts();
     int numOfAcc = bank->get_num_of_accounts();
     for (int i = 0; i < numOfAcc; i++) {
-        Account* account = accounts.at(i);
+        Account* account = &accounts.at(i);
         buffer = add_details_to_string(buffer, account);
         cout << buffer << '\n';
         buffer = "";
@@ -371,8 +368,6 @@ void close_account(Bank* bank) {
     cout << "----Delete Record----\n";
     int accNum = run_question_sequence("Enter the account number: ", 
             convert_string_to_int);
-    printf("(1)\n");
-    printf("Accont number: %d", accNum);
     bank->delete_account(accNum);
     end_action("Record Deleted\n");
 }
