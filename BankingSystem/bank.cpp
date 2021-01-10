@@ -42,6 +42,22 @@ class Account {
             return balance;
         }
 
+        void set_acc_number(int num) {
+            accNum = num;
+        }
+
+        void set_name(string name) {
+            holder = name;
+        }
+
+        void set_acc_type(string newType) {
+            type = newType;
+        }
+
+        void set_balance(float newBalance) {
+            balance = newBalance;
+        }
+
         void increase_balance(float increase) {
             printf("(1)\n");
             balance = balance + increase;
@@ -215,10 +231,10 @@ int get_account_number(Bank* bank) {
 
 }
 
-string get_account_holder(void) {
+string get_account_holder(string message) {
     string accHolder;
     while (true) {
-        cout << "Enter the name of the account holder: ";
+        cout << message;
         accHolder = get_user_input();
         if (invalid_string(accHolder)) {
             cout << 
@@ -230,10 +246,10 @@ string get_account_holder(void) {
     return accHolder;
 }
 
-string get_type_of_account(void) {
+string get_type_of_account(string message) {
     string accType;
     while (true) {
-        cout << "Enter the type of the account (type 'S' for savings or 'C' for current): ";
+        cout << message;
         accType = get_user_input();
         if (accType.compare("S") != 0 && accType.compare("C") != 0) {
             cout << "Please enter S for savings or C for current account\n";
@@ -244,8 +260,8 @@ string get_type_of_account(void) {
     return accType;
 }
 
-float get_balance(void) {
-    float amount = run_question_sequence("Enter initial amount: ", 
+float get_balance(string message) {
+    float amount = run_question_sequence(message, 
             convert_string_to_float);
     return amount;
 }
@@ -311,16 +327,15 @@ string add_details_to_string(string buffer, Account* account) {
     return buffer;
 }
 
-
-void new_account(Bank* bank) {
-    cout << "----New Account Entry Form----\n";
+void new_account(Bank* bank, string message) {
+    cout << message;
     int accountNumber;
     string accountHolder, accType;
     float amount;
     accountNumber = get_account_number(bank);
-    accountHolder = get_account_holder();
-    accType = get_type_of_account();
-    amount = get_balance();
+    accountHolder = get_account_holder("Enter the name of the account holder: ");
+    accType = get_type_of_account("Enter the type of the account (type 'S' for savings or 'C' for current): ");
+    amount = get_balance("Enter initial amount: ");
     bank->add_account(accountNumber, accountHolder, accType, amount);
     end_action("Account was set up succesfully\n");
 }
@@ -373,7 +388,20 @@ void close_account(Bank* bank) {
 }
 
 void modify_account(Bank* bank) {
-    
+    cout << "----Modify Record----\n";
+    int accNum = run_question_sequence("Enter the Account Number: ", 
+            convert_string_to_int);
+    Account* account = bank->get_account(accNum);
+    account->to_string_lookalike();
+    int newAccNum = get_account_number(bank);
+    account->set_acc_number(newAccNum);
+    string newName = get_account_holder("Modify Account Holder Name: ");
+    account->set_name(newName);
+    string newAccType = get_type_of_account("Modify Type of Account: ");
+    account->set_acc_type(newAccType);
+    float newBalance = get_balance("Modify Balance Amount: ");
+    account->set_balance(newBalance);
+    end_action("Record Updated\n");
 }
 
 void quit_program(Bank* bank) {
@@ -387,7 +415,7 @@ void save(Bank* bank) {
 
 void handle_input(int inputNum, Bank* bank) {
     switch (inputNum) {
-        case 1: new_account(bank); break;
+        case 1: new_account(bank, "----New Account Entry Form----\n"); break;
         case 2: deposit(bank); break;
         case 3: withdraw(bank); break;
         case 4: balance_enquiry(bank); break;
