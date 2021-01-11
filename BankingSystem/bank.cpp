@@ -5,12 +5,16 @@
 #include <exception>
 #include <sstream>
 #include <iterator>
+#include <fstream>
 
 using namespace std;
 
 #define NAME_POS 33
 #define TYPE_POS 62
 #define BALANCE_POS 91
+#define ACCOUNT_SEP_LINE "-----------------"
+#define BAD_FILE "Unable to open file"
+#define BAD_FORMAT "File is incorrectly formatted"
 
 class Account {
     private:
@@ -42,6 +46,22 @@ class Account {
             return balance;
         }
 
+        void set_acc_number(int num) {
+            accNum = num;
+        }
+
+        void set_name(string name) {
+            holder = name;
+        }
+
+        void set_acc_type(string newType) {
+            type = newType;
+        }
+
+        void set_balance(float newBalance) {
+            balance = newBalance;
+        }
+
         void increase_balance(float increase) {
             printf("(1)\n");
             balance = balance + increase;
@@ -56,19 +76,24 @@ class Account {
             }
         }
 
-        void to_string_lookalike(void) {
+        void display_account(void) {
             cout << "---Account Status---\n";
-            cout << "Account Number: " << accNum << '\n';
-            cout << "Account Holder Name: " << holder << '\n';
-            cout << "Type of Account: " << type << '\n';
-            cout << "Balance Amount: " << balance << '\n';
+            cout << account_string();
+        }
+
+        string account_string(void) {
+            string returnString = "Account Number: " + to_string(accNum) + '\n';
+            returnString = returnString + "Account Holder Name: " + holder + '\n';
+            returnString = returnString + "Type of Account: " + type + '\n';
+            returnString = returnString + "Balance Amount: " + to_string(balance) + '\n';
+            return returnString;
         }
 
 };
 
 class Bank {
     private:
-        vector<Account*> accounts;
+        vector<Account> accounts;
         int numberOfAccounts;
 
     public:
@@ -81,14 +106,14 @@ class Bank {
 
         void add_account(int number, string holder, string type, float amount) {
             Account* newAcc = new Account(number, holder, type, amount);
-            accounts.push_back(newAcc);
+            accounts.push_back(*newAcc);
             numberOfAccounts++;
         }
 
         Account* get_account(int number) {
             for (int i = 0; i < accounts.size(); i++) {
-                if (number == accounts.at(i)->get_acc_num()) {
-                    return accounts.at(i);
+                if (number == accounts.at(i).get_acc_num()) {
+                    return &accounts.at(i);
                 }
             }
             //Throw new exception if not found!
@@ -96,11 +121,11 @@ class Bank {
 
         void display_accounts(void) {
             for (int i = 0; i < accounts.size(); i++) {
-                accounts.at(i)->to_string_lookalike();
+                accounts.at(i).display_account();;
             }
         }
 
-        vector<Account*> get_accounts(void) {
+        vector<Account> get_accounts(void) {
             return accounts;
         }
 
@@ -109,14 +134,18 @@ class Bank {
         }
 
         void delete_account(int accNum) {
-            printf("We are deleting account: %d", accNum);
             for (int i = 0; i < numberOfAccounts; i++) {
-                if (accNum == accounts.at(i)->get_acc_num()) {
-                    free(accounts.at(i));
-                    delete accounts.at(i);
+                if (accNum == accounts.at(i).get_acc_num()) {
+                    accounts.erase(accounts.begin() + i);
+                    break;
                 }
             }
+            numberOfAccounts--;
             //handle account does not exist.
+        }
+
+        void set_num_of_acc(int num) {
+            numberOfAccounts = num;
         }
 };
 
@@ -126,24 +155,6 @@ void check_args(int argc) {
              << "Usage: ./bank savefile or ./bank\n";
         exit(1);
     }
-}
-
-Bank* create_bank(int argc, char** argv, Bank* bank) {
-    string bankName;
-    if (argc == 1) {
-        cout << "Enter the name of the bank: ";
-        getline(cin, bankName);
-        bank = new Bank(bankName);
-        return bank;
-    } else {
-        //load a bank from a save file.
-    }
-}
-
-string get_user_input(void) {
-    string userInput;
-    getline(cin, userInput);
-    return userInput;
 }
 
 /*
@@ -176,6 +187,22 @@ float convert_string_to_float(string numStr) {
     return number;
 }
 
+string get_user_input(void) {
+    string userInput;
+    getline(cin, userInput);
+    return userInput;
+}
+
+string getLine(ifstream* file) {
+    string line;
+    if (!getline(*file, line)) {
+        cerr << BAD_FORMAT << endl;
+        exit(2);
+    }
+    cout << "The line we just got was: " << line << endl;
+    return line;
+}
+
 bool invalid_string(string input) {
     for (int i = 0; i < input.length(); i++) {
         if ((input[i] < 'A' || input[i] > 'Z')  && 
@@ -186,6 +213,88 @@ bool invalid_string(string input) {
     return false;
 }
 
+Bank* load_bank(Bank* bank, string fileName) {
+    ifstream loadFile;
+    loadFile.open(fileName);
+    if (!loadFile) {
+        cerr << BAD_FILE << endl;
+        exit(1);
+    }
+    string line = getLine(&loadFile);
+    bank = new Bank(line);
+    line = getLine(&loadFile);
+    printf("(1)\n");
+    int numOfAcc = convert_string_to_int(line);
+    printf("(2)\n");
+    bank->set_num_of_acc(numOfAcc);
+    printf("(3)\n");
+    for (int i = 0; i < numOfAcc; i++) {
+        printf("(4)\n");
+        line = getLine(&loadFile);
+        if (line.compare(ACCOUNT_SEP_LINE)) {
+            printf("(5)\n");
+            line = getLine(&loadFile);
+            cout << "line: " << line << endl;
+            while (!line.compare(ACCOUNT_SEP_LINE)) {
+                printf("(6)\n");
+                int accNum = convert_string_to_int(getLine(&loadFile));
+                if (accNum == -1 || accNum == -2 || accNum == 0) {
+                    cerr << BAD_FORMAT << endl;
+                    exit(2);
+                }
+                string holder = getLine(&loadFile);
+                if (invalid_string(holder)) {
+                    cerr << BAD_FORMAT << endl;
+                    exit(2);
+                }
+                string type = getLine(&loadFile);
+                if (!type.compare("S") && !type.compare("C")) {
+                    cerr << BAD_FORMAT << endl;
+                    exit(2);
+                }
+                float balance = convert_string_to_float(getLine(&loadFile));
+                if (balance == -1 || balance == -2 || balance == 0) {
+                    cerr << BAD_FILE << endl;
+                    exit(2);
+                }
+                cout << "Acc Num: " << accNum << endl;
+                cout << "Holder: " << holder << endl;
+                cout << "Type: " << type << endl;
+                cout << "Balance: " << balance << endl;
+                bank->add_account(accNum, holder, type, balance);
+            }
+        } else if (line.compare("END")) {
+            if (i != numOfAcc - 1) {
+                cerr << BAD_FORMAT << endl;
+                exit(2);
+            }
+        }
+        
+    }
+    loadFile.close();
+    printf("(5)\n");
+    printf("number of accounts: %d\n", numOfAcc);
+    vector<Account> accounts = bank->get_accounts();
+    for (int i = 0; i < numOfAcc; i++) accounts.at(i).display_account();
+    return bank;
+}
+
+
+Bank* create_bank(int argc, char** argv, Bank* bank) {
+    string bankName;
+    if (argc == 1) {
+        cout << "Enter the name of the bank: ";
+        getline(cin, bankName);
+        bank = new Bank(bankName);
+        return bank;
+    } else {
+        bank = load_bank(bank, argv[1]);
+        return bank;
+    }
+}
+
+
+
 template <typename T>
 T run_question_sequence(string message, T (*foo)(string)) {
     T num;
@@ -194,7 +303,7 @@ T run_question_sequence(string message, T (*foo)(string)) {
         string userInputStr = get_user_input();
         num = foo(userInputStr);
         if (num == -1) {
-            cout << "Please enter a valid account number.\n";
+            cout << "Please enter a valid number.\n";
             continue;
         } else if (num == 0) {
             cout << "Please enter a non-zero account number.\n";
@@ -215,10 +324,10 @@ int get_account_number(Bank* bank) {
 
 }
 
-string get_account_holder(void) {
+string get_account_holder(string message) {
     string accHolder;
     while (true) {
-        cout << "Enter the name of the account holder: ";
+        cout << message;
         accHolder = get_user_input();
         if (invalid_string(accHolder)) {
             cout << 
@@ -230,10 +339,10 @@ string get_account_holder(void) {
     return accHolder;
 }
 
-string get_type_of_account(void) {
+string get_type_of_account(string message) {
     string accType;
     while (true) {
-        cout << "Enter the type of the account (type 'S' for savings or 'C' for current): ";
+        cout << message;
         accType = get_user_input();
         if (accType.compare("S") != 0 && accType.compare("C") != 0) {
             cout << "Please enter S for savings or C for current account\n";
@@ -244,8 +353,8 @@ string get_type_of_account(void) {
     return accType;
 }
 
-float get_balance(void) {
-    float amount = run_question_sequence("Enter initial amount: ", 
+float get_balance(string message) {
+    float amount = run_question_sequence(message, 
             convert_string_to_float);
     return amount;
 }
@@ -261,7 +370,7 @@ void account_transaction_form(Bank* bank, bool withdraw) {
     cout << "----Account Transaction Form----\n";
     int accNum = run_question_sequence("Enter the account number: ", 
             convert_string_to_int);
-    bank->get_account(accNum)->to_string_lookalike();
+    bank->get_account(accNum)->display_account();;
     float amount;
     if (!withdraw) {
         amount = run_question_sequence("Enter the amount to deposit: ", 
@@ -311,16 +420,15 @@ string add_details_to_string(string buffer, Account* account) {
     return buffer;
 }
 
-
-void new_account(Bank* bank) {
-    cout << "----New Account Entry Form----\n";
+void new_account(Bank* bank, string message) {
+    cout << message;
     int accountNumber;
     string accountHolder, accType;
     float amount;
     accountNumber = get_account_number(bank);
-    accountHolder = get_account_holder();
-    accType = get_type_of_account();
-    amount = get_balance();
+    accountHolder = get_account_holder("Enter the name of the account holder: ");
+    accType = get_type_of_account("Enter the type of the account (type 'S' for savings or 'C' for current): ");
+    amount = get_balance("Enter initial amount: ");
     bank->add_account(accountNumber, accountHolder, accType, amount);
     end_action("Account was set up succesfully\n");
 }
@@ -340,7 +448,7 @@ void balance_enquiry(Bank* bank) {
     cout << "Balance Details.\n";
     int accNum = run_question_sequence("Enter the account number: ", 
             convert_string_to_int);
-    bank->get_account(accNum)->to_string_lookalike();
+    bank->get_account(accNum)->display_account();;
     end_action("");
 }
 
@@ -354,10 +462,10 @@ void account_holders(Bank* bank) {
     cout << header;
     cout << banner;
     string buffer = "";
-    vector<Account*> accounts = bank->get_accounts();
+    vector<Account> accounts = bank->get_accounts();
     int numOfAcc = bank->get_num_of_accounts();
     for (int i = 0; i < numOfAcc; i++) {
-        Account* account = accounts.at(i);
+        Account* account = &accounts.at(i);
         buffer = add_details_to_string(buffer, account);
         cout << buffer << '\n';
         buffer = "";
@@ -368,14 +476,25 @@ void close_account(Bank* bank) {
     cout << "----Delete Record----\n";
     int accNum = run_question_sequence("Enter the account number: ", 
             convert_string_to_int);
-    printf("(1)\n");
-    printf("Accont number: %d", accNum);
     bank->delete_account(accNum);
     end_action("Record Deleted\n");
 }
 
 void modify_account(Bank* bank) {
-    
+    cout << "----Modify Record----\n";
+    int accNum = run_question_sequence("Enter the Account Number: ", 
+            convert_string_to_int);
+    Account* account = bank->get_account(accNum);
+    account->display_account();;
+    int newAccNum = get_account_number(bank);
+    account->set_acc_number(newAccNum);
+    string newName = get_account_holder("Modify Account Holder Name: ");
+    account->set_name(newName);
+    string newAccType = get_type_of_account("Modify Type of Account: ");
+    account->set_acc_type(newAccType);
+    float newBalance = get_balance("Modify Balance Amount: ");
+    account->set_balance(newBalance);
+    end_action("Record Updated\n");
 }
 
 void quit_program(Bank* bank) {
@@ -384,12 +503,33 @@ void quit_program(Bank* bank) {
 }
 
 void save(Bank* bank) {
-    cout << "save\n";
+    cout << "----Save Bank Status-----\n";
+    cout << "Enter the name of the file: ";
+    string fileName = get_user_input();
+    ofstream saveFile;
+    saveFile.open(fileName);
+    if (!saveFile) {
+        cerr << BAD_FILE << endl;
+        exit(1);
+    }
+    saveFile << bank->name << endl;
+    saveFile << bank->get_num_of_accounts() << endl;
+    saveFile << ACCOUNT_SEP_LINE << endl;
+    int numOfAcc = bank->get_num_of_accounts();
+    vector<Account> accounts = bank->get_accounts();
+    for (int i = 0; i < numOfAcc; i++) {
+        saveFile << accounts.at(i).account_string();
+        if (i != numOfAcc - 1) {
+            saveFile << ACCOUNT_SEP_LINE << endl;
+        }
+    }
+    saveFile << "END";
+    saveFile.close();
 }
 
 void handle_input(int inputNum, Bank* bank) {
     switch (inputNum) {
-        case 1: new_account(bank); break;
+        case 1: new_account(bank, "----New Account Entry Form----\n"); break;
         case 2: deposit(bank); break;
         case 3: withdraw(bank); break;
         case 4: balance_enquiry(bank); break;
@@ -428,3 +568,11 @@ int main(int argc, char** argv) {
     run_bank(bank);
     return 0;
 }
+
+/*
+To do:
+- Finish off the loading bank from save file
+- Create exceptions for account not found
+- Document code properly
+
+*/
