@@ -12,7 +12,7 @@ using namespace std;
 #define NAME_POS 33
 #define TYPE_POS 62
 #define BALANCE_POS 91
-#define ACCOUNT_SEP_LINE "-----------------"
+#define ACCOUNT_SEP_LINE "---------------"
 #define BAD_FILE "Unable to open file"
 #define BAD_FORMAT "File is incorrectly formatted"
 
@@ -78,14 +78,17 @@ class Account {
 
         void display_account(void) {
             cout << "---Account Status---\n";
-            cout << account_string();
+            cout << "Account Number: " << to_string(accNum) << endl;
+            cout << "Account Holder Name: " << holder << endl;
+            cout << "Type of Account: " << type << endl;
+            cout << "Balance Amount: " << to_string(balance) << endl;
         }
 
         string account_string(void) {
-            string returnString = "Account Number: " + to_string(accNum) + '\n';
-            returnString = returnString + "Account Holder Name: " + holder + '\n';
-            returnString = returnString + "Type of Account: " + type + '\n';
-            returnString = returnString + "Balance Amount: " + to_string(balance) + '\n';
+            string returnString = to_string(accNum) + '\n';
+            returnString = returnString + holder + '\n';
+            returnString = returnString + type + '\n';
+            returnString = returnString + to_string(balance) + '\n';
             return returnString;
         }
 
@@ -143,10 +146,6 @@ class Bank {
             numberOfAccounts--;
             //handle account does not exist.
         }
-
-        void set_num_of_acc(int num) {
-            numberOfAccounts = num;
-        }
 };
 
 void check_args(int argc) {
@@ -199,7 +198,6 @@ string getLine(ifstream* file) {
         cerr << BAD_FORMAT << endl;
         exit(2);
     }
-    cout << "The line we just got was: " << line << endl;
     return line;
 }
 
@@ -225,36 +223,42 @@ Bank* load_bank(Bank* bank, string fileName) {
     bank = new Bank(line);
     line = getLine(&loadFile);
     int numOfAcc = convert_string_to_int(line);
+    if (numOfAcc == -1 || numOfAcc == -2) {
+        cerr << BAD_FORMAT << endl;
+        exit(2);
+    }
     for (int i = 0; i < numOfAcc; i++) {
         line = getLine(&loadFile);
-        if (line.compare(ACCOUNT_SEP_LINE)) {
+        if (line.compare(ACCOUNT_SEP_LINE) == 0) {
             int accNum = convert_string_to_int(getLine(&loadFile));
             if (accNum == -1 || accNum == -2 || accNum == 0) {
+                printf("(1)\n");
                 cerr << BAD_FORMAT << endl;
                 exit(2);
             }
             string holder = getLine(&loadFile);
             if (invalid_string(holder)) {
+                printf("(2)\n");
                 cerr << BAD_FORMAT << endl;
                 exit(2);
             }
             string type = getLine(&loadFile);
             if (type.compare("S") != 0 && type.compare("C") != 0) {
+                printf("(3)\n");
                 cerr << BAD_FORMAT << endl;
                 exit(2);
             }
             float balance = convert_string_to_float(getLine(&loadFile));
             if (balance == -1 || balance == -2 || balance == 0) {
+                printf("(4)\n");
                 cerr << BAD_FILE << endl;
                 exit(2);
             }
-            cout << "Acc Num: " << accNum << endl;
-            cout << "Holder: " << holder << endl;
-            cout << "Type: " << type << endl;
-            cout << "Balance: " << balance << endl;
             bank->add_account(accNum, holder, type, balance);
-        } else if (line.compare("END")) {
+        } else if (line.compare("END") == 0) {
+            cout << "i:" << i << endl;
             if (i != numOfAcc - 1) {
+                printf("(5)\n");
                 cerr << BAD_FORMAT << endl;
                 exit(2);
             }
@@ -262,9 +266,7 @@ Bank* load_bank(Bank* bank, string fileName) {
         
     }
     loadFile.close();
-    printf("number of accounts: %d\n", numOfAcc);
     vector<Account> accounts = bank->get_accounts();
-    for (int i = 0; i < numOfAcc; i++) accounts.at(i).display_account();
     return bank;
 }
 
@@ -352,7 +354,7 @@ void end_action(string message) {
     cout << message;
     cout << "Press enter to continue.\n";
     fgetc(stdin);
-    cout << "-------------------------------\n";
+    cout << "-------------------------------\n"; //31
 }
 
 void account_transaction_form(Bank* bank, bool withdraw) {
