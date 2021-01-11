@@ -11,6 +11,7 @@ using namespace std;
 #define NAME_POS 33
 #define TYPE_POS 62
 #define BALANCE_POS 91
+#define ACCOUNT_SEP_LINE "-----------------"
 
 class Account {
     private:
@@ -72,12 +73,17 @@ class Account {
             }
         }
 
-        void to_string_lookalike(void) {
+        void display_account(void) {
             cout << "---Account Status---\n";
-            cout << "Account Number: " << accNum << '\n';
-            cout << "Account Holder Name: " << holder << '\n';
-            cout << "Type of Account: " << type << '\n';
-            cout << "Balance Amount: " << balance << '\n';
+            cout << account_string();
+        }
+
+        string account_string(void) {
+            string returnString = "Account Number: " + to_string(accNum) + '\n';
+            returnString = returnString + "Account Holder Name: " + holder + '\n';
+            returnString = returnString + "Type of Account: " + type + '\n';
+            returnString = returnString + "Balance Amount: " + to_string(balance) + '\n';
+            return returnString;
         }
 
 };
@@ -112,7 +118,7 @@ class Bank {
 
         void display_accounts(void) {
             for (int i = 0; i < accounts.size(); i++) {
-                accounts.at(i).to_string_lookalike();
+                accounts.at(i).display_account();;
             }
         }
 
@@ -277,7 +283,7 @@ void account_transaction_form(Bank* bank, bool withdraw) {
     cout << "----Account Transaction Form----\n";
     int accNum = run_question_sequence("Enter the account number: ", 
             convert_string_to_int);
-    bank->get_account(accNum)->to_string_lookalike();
+    bank->get_account(accNum)->display_account();;
     float amount;
     if (!withdraw) {
         amount = run_question_sequence("Enter the amount to deposit: ", 
@@ -355,7 +361,7 @@ void balance_enquiry(Bank* bank) {
     cout << "Balance Details.\n";
     int accNum = run_question_sequence("Enter the account number: ", 
             convert_string_to_int);
-    bank->get_account(accNum)->to_string_lookalike();
+    bank->get_account(accNum)->display_account();;
     end_action("");
 }
 
@@ -392,7 +398,7 @@ void modify_account(Bank* bank) {
     int accNum = run_question_sequence("Enter the Account Number: ", 
             convert_string_to_int);
     Account* account = bank->get_account(accNum);
-    account->to_string_lookalike();
+    account->display_account();;
     int newAccNum = get_account_number(bank);
     account->set_acc_number(newAccNum);
     string newName = get_account_holder("Modify Account Holder Name: ");
@@ -410,7 +416,26 @@ void quit_program(Bank* bank) {
 }
 
 void save(Bank* bank) {
-    cout << "save\n";
+    cout << "----Save Bank Status-----\n";
+    /*cout << "Enter the name of the file: ";
+    string fileName = get_user_input();
+    ofstream saveFile = open(fileName);
+    if (!saveFile) {
+        cerr << "Unable to open file" << endl;
+        exit(1);
+    }*/
+    cout << bank->name << endl;
+    cout << bank->get_num_of_accounts() << endl;
+    cout << ACCOUNT_SEP_LINE << endl;
+    int numOfAcc = bank->get_num_of_accounts();
+    vector<Account> accounts = bank->get_accounts();
+    for (int i = 0; i < numOfAcc; i++) {
+        cout << accounts.at(i).account_string();
+        if (i != numOfAcc - 1) {
+            cout << ACCOUNT_SEP_LINE << endl;
+        }
+    }
+    cout << "END";
 }
 
 void handle_input(int inputNum, Bank* bank) {
