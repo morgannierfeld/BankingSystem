@@ -16,6 +16,18 @@ using namespace std;
 #define BAD_FILE "Unable to open file"
 #define BAD_FORMAT "File is incorrectly formatted"
 
+struct AccountNotFoundException : public std::exception {
+    const char* what() const throw() {
+        return "Account not found";
+    }
+};
+
+struct NegativeBalanceException : public std::exception {
+    const char* what() const throw() {
+        return "Withdraw will cause balance to fall below zero";
+    }
+};
+
 class Account {
     private:
         int accNum;
@@ -63,14 +75,12 @@ class Account {
         }
 
         void increase_balance(float increase) {
-            printf("(1)\n");
             balance = balance + increase;
-            cout << "The new balance is: " << balance << '\n';
         }
 
         void decrease_balance(float decrease) {
             if (balance - decrease < 0) {
-                //throw exception
+                throw NegativeBalanceException();
             } else {
                 balance = balance - decrease;
             }
@@ -119,7 +129,7 @@ class Bank {
                     return &accounts.at(i);
                 }
             }
-            //Throw new exception if not found!
+            throw AccountNotFoundException();
         }
 
         void display_accounts(void) {
@@ -137,14 +147,19 @@ class Bank {
         }
 
         void delete_account(int accNum) {
+            bool found = false;
             for (int i = 0; i < numberOfAccounts; i++) {
                 if (accNum == accounts.at(i).get_acc_num()) {
                     accounts.erase(accounts.begin() + i);
+                    found = true;
                     break;
                 }
             }
-            numberOfAccounts--;
-            //handle account does not exist.
+            if (found) {
+                numberOfAccounts--;
+            } else {
+                throw AccountNotFoundException();
+            }
         }
 };
 
@@ -205,7 +220,6 @@ bool invalid_string(string input) {
     for (int i = 0; i < input.length(); i++) {
         if ((input[i] < 'A' || input[i] > 'Z')  && 
             (input[i] < 'a' || input[i] > 'z') && input[i] != ' ') {
-                printf("(8)\n");
                 return true;
             }
     }
@@ -232,25 +246,21 @@ Bank* load_bank(Bank* bank, string fileName) {
         if (line.compare(ACCOUNT_SEP_LINE) == 0) {
             int accNum = convert_string_to_int(getLine(&loadFile));
             if (accNum == -1 || accNum == -2 || accNum == 0) {
-                printf("(1)\n");
                 cerr << BAD_FORMAT << endl;
                 exit(2);
             }
             string holder = getLine(&loadFile);
             if (invalid_string(holder)) {
-                printf("(2)\n");
                 cerr << BAD_FORMAT << endl;
                 exit(2);
             }
             string type = getLine(&loadFile);
             if (type.compare("S") != 0 && type.compare("C") != 0) {
-                printf("(3)\n");
                 cerr << BAD_FORMAT << endl;
                 exit(2);
             }
             float balance = convert_string_to_float(getLine(&loadFile));
             if (balance == -1 || balance == -2 || balance == 0) {
-                printf("(4)\n");
                 cerr << BAD_FILE << endl;
                 exit(2);
             }
@@ -258,12 +268,10 @@ Bank* load_bank(Bank* bank, string fileName) {
         } else if (line.compare("END") == 0) {
             cout << "i:" << i << endl;
             if (i != numOfAcc - 1) {
-                printf("(5)\n");
                 cerr << BAD_FORMAT << endl;
                 exit(2);
             }
         }
-        
     }
     loadFile.close();
     vector<Account> accounts = bank->get_accounts();
@@ -354,7 +362,7 @@ void end_action(string message) {
     cout << message;
     cout << "Press enter to continue.\n";
     fgetc(stdin);
-    cout << "-------------------------------\n"; //31
+    cout << string(31, '-') << endl;
 }
 
 void account_transaction_form(Bank* bank, bool withdraw) {
@@ -368,9 +376,17 @@ void account_transaction_form(Bank* bank, bool withdraw) {
                 convert_string_to_float);
         bank->get_account(accNum)->increase_balance(amount);
     } else {
-        amount = run_question_sequence("Enter the amount to withdraw: ", 
-                convert_string_to_float);
-        bank->get_account(accNum)->decrease_balance(amount);
+        while (true) {
+            amount = run_question_sequence("Enter the amount to withdraw: ", 
+                    convert_string_to_float);
+            try {
+                bank->get_account(accNum)->decrease_balance(amount);
+                break;
+            } catch (NegativeBalanceException &e) {
+                cout << "Cannot withdraw $" << amount << endl;
+                cout << "Account has: $" << bank->get_account(accNum)->get_balance() << endl; 
+            }
+        }
     }
 }
 
@@ -562,8 +578,5 @@ int main(int argc, char** argv) {
 
 /*
 To do:
-- Finish off the loading bank from save file
-- Create exceptions for account not found
 - Document code properly
-
 */
