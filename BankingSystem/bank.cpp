@@ -13,6 +13,8 @@ using namespace std;
 #define TYPE_POS 62
 #define BALANCE_POS 91
 #define ACCOUNT_SEP_LINE "-----------------"
+#define BAD_FILE "Unable to open file"
+#define BAD_FORMAT "File is incorrectly formatted"
 
 class Account {
     private:
@@ -141,6 +143,10 @@ class Bank {
             numberOfAccounts--;
             //handle account does not exist.
         }
+
+        void set_num_of_acc(int num) {
+            numberOfAccounts = num;
+        }
 };
 
 void check_args(int argc) {
@@ -149,24 +155,6 @@ void check_args(int argc) {
              << "Usage: ./bank savefile or ./bank\n";
         exit(1);
     }
-}
-
-Bank* create_bank(int argc, char** argv, Bank* bank) {
-    string bankName;
-    if (argc == 1) {
-        cout << "Enter the name of the bank: ";
-        getline(cin, bankName);
-        bank = new Bank(bankName);
-        return bank;
-    } else {
-        
-    }
-}
-
-string get_user_input(void) {
-    string userInput;
-    getline(cin, userInput);
-    return userInput;
 }
 
 /*
@@ -199,6 +187,22 @@ float convert_string_to_float(string numStr) {
     return number;
 }
 
+string get_user_input(void) {
+    string userInput;
+    getline(cin, userInput);
+    return userInput;
+}
+
+string getLine(ifstream* file) {
+    string line;
+    if (!getline(*file, line)) {
+        cerr << BAD_FORMAT << endl;
+        exit(2);
+    }
+    cout << "The line we just got was: " << line << endl;
+    return line;
+}
+
 bool invalid_string(string input) {
     for (int i = 0; i < input.length(); i++) {
         if ((input[i] < 'A' || input[i] > 'Z')  && 
@@ -208,6 +212,88 @@ bool invalid_string(string input) {
     }
     return false;
 }
+
+Bank* load_bank(Bank* bank, string fileName) {
+    ifstream loadFile;
+    loadFile.open(fileName);
+    if (!loadFile) {
+        cerr << BAD_FILE << endl;
+        exit(1);
+    }
+    string line = getLine(&loadFile);
+    bank = new Bank(line);
+    line = getLine(&loadFile);
+    printf("(1)\n");
+    int numOfAcc = convert_string_to_int(line);
+    printf("(2)\n");
+    bank->set_num_of_acc(numOfAcc);
+    printf("(3)\n");
+    for (int i = 0; i < numOfAcc; i++) {
+        printf("(4)\n");
+        line = getLine(&loadFile);
+        if (line.compare(ACCOUNT_SEP_LINE)) {
+            printf("(5)\n");
+            line = getLine(&loadFile);
+            cout << "line: " << line << endl;
+            while (!line.compare(ACCOUNT_SEP_LINE)) {
+                printf("(6)\n");
+                int accNum = convert_string_to_int(getLine(&loadFile));
+                if (accNum == -1 || accNum == -2 || accNum == 0) {
+                    cerr << BAD_FORMAT << endl;
+                    exit(2);
+                }
+                string holder = getLine(&loadFile);
+                if (invalid_string(holder)) {
+                    cerr << BAD_FORMAT << endl;
+                    exit(2);
+                }
+                string type = getLine(&loadFile);
+                if (!type.compare("S") && !type.compare("C")) {
+                    cerr << BAD_FORMAT << endl;
+                    exit(2);
+                }
+                float balance = convert_string_to_float(getLine(&loadFile));
+                if (balance == -1 || balance == -2 || balance == 0) {
+                    cerr << BAD_FILE << endl;
+                    exit(2);
+                }
+                cout << "Acc Num: " << accNum << endl;
+                cout << "Holder: " << holder << endl;
+                cout << "Type: " << type << endl;
+                cout << "Balance: " << balance << endl;
+                bank->add_account(accNum, holder, type, balance);
+            }
+        } else if (line.compare("END")) {
+            if (i != numOfAcc - 1) {
+                cerr << BAD_FORMAT << endl;
+                exit(2);
+            }
+        }
+        
+    }
+    loadFile.close();
+    printf("(5)\n");
+    printf("number of accounts: %d\n", numOfAcc);
+    vector<Account> accounts = bank->get_accounts();
+    for (int i = 0; i < numOfAcc; i++) accounts.at(i).display_account();
+    return bank;
+}
+
+
+Bank* create_bank(int argc, char** argv, Bank* bank) {
+    string bankName;
+    if (argc == 1) {
+        cout << "Enter the name of the bank: ";
+        getline(cin, bankName);
+        bank = new Bank(bankName);
+        return bank;
+    } else {
+        bank = load_bank(bank, argv[1]);
+        return bank;
+    }
+}
+
+
 
 template <typename T>
 T run_question_sequence(string message, T (*foo)(string)) {
@@ -423,7 +509,7 @@ void save(Bank* bank) {
     ofstream saveFile;
     saveFile.open(fileName);
     if (!saveFile) {
-        cerr << "Unable to open file" << endl;
+        cerr << BAD_FILE << endl;
         exit(1);
     }
     saveFile << bank->name << endl;
@@ -482,3 +568,11 @@ int main(int argc, char** argv) {
     run_bank(bank);
     return 0;
 }
+
+/*
+To do:
+- Finish off the loading bank from save file
+- Create exceptions for account not found
+- Document code properly
+
+*/

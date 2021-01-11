@@ -1,0 +1,13 @@
+Bank Name
+Number of Accounts
+-----------------
+Acc No
+Holder
+Type
+Balance
+-----------------
+Acc No
+Holder
+Type
+Balance
+END
