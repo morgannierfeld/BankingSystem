@@ -207,6 +207,7 @@ bool invalid_string(string input) {
     for (int i = 0; i < input.length(); i++) {
         if ((input[i] < 'A' || input[i] > 'Z')  && 
             (input[i] < 'a' || input[i] > 'z') && input[i] != ' ') {
+                printf("(8)\n");
                 return true;
             }
     }
@@ -223,46 +224,35 @@ Bank* load_bank(Bank* bank, string fileName) {
     string line = getLine(&loadFile);
     bank = new Bank(line);
     line = getLine(&loadFile);
-    printf("(1)\n");
     int numOfAcc = convert_string_to_int(line);
-    printf("(2)\n");
-    bank->set_num_of_acc(numOfAcc);
-    printf("(3)\n");
     for (int i = 0; i < numOfAcc; i++) {
-        printf("(4)\n");
         line = getLine(&loadFile);
         if (line.compare(ACCOUNT_SEP_LINE)) {
-            printf("(5)\n");
-            line = getLine(&loadFile);
-            cout << "line: " << line << endl;
-            while (!line.compare(ACCOUNT_SEP_LINE)) {
-                printf("(6)\n");
-                int accNum = convert_string_to_int(getLine(&loadFile));
-                if (accNum == -1 || accNum == -2 || accNum == 0) {
-                    cerr << BAD_FORMAT << endl;
-                    exit(2);
-                }
-                string holder = getLine(&loadFile);
-                if (invalid_string(holder)) {
-                    cerr << BAD_FORMAT << endl;
-                    exit(2);
-                }
-                string type = getLine(&loadFile);
-                if (!type.compare("S") && !type.compare("C")) {
-                    cerr << BAD_FORMAT << endl;
-                    exit(2);
-                }
-                float balance = convert_string_to_float(getLine(&loadFile));
-                if (balance == -1 || balance == -2 || balance == 0) {
-                    cerr << BAD_FILE << endl;
-                    exit(2);
-                }
-                cout << "Acc Num: " << accNum << endl;
-                cout << "Holder: " << holder << endl;
-                cout << "Type: " << type << endl;
-                cout << "Balance: " << balance << endl;
-                bank->add_account(accNum, holder, type, balance);
+            int accNum = convert_string_to_int(getLine(&loadFile));
+            if (accNum == -1 || accNum == -2 || accNum == 0) {
+                cerr << BAD_FORMAT << endl;
+                exit(2);
             }
+            string holder = getLine(&loadFile);
+            if (invalid_string(holder)) {
+                cerr << BAD_FORMAT << endl;
+                exit(2);
+            }
+            string type = getLine(&loadFile);
+            if (type.compare("S") != 0 && type.compare("C") != 0) {
+                cerr << BAD_FORMAT << endl;
+                exit(2);
+            }
+            float balance = convert_string_to_float(getLine(&loadFile));
+            if (balance == -1 || balance == -2 || balance == 0) {
+                cerr << BAD_FILE << endl;
+                exit(2);
+            }
+            cout << "Acc Num: " << accNum << endl;
+            cout << "Holder: " << holder << endl;
+            cout << "Type: " << type << endl;
+            cout << "Balance: " << balance << endl;
+            bank->add_account(accNum, holder, type, balance);
         } else if (line.compare("END")) {
             if (i != numOfAcc - 1) {
                 cerr << BAD_FORMAT << endl;
@@ -272,7 +262,6 @@ Bank* load_bank(Bank* bank, string fileName) {
         
     }
     loadFile.close();
-    printf("(5)\n");
     printf("number of accounts: %d\n", numOfAcc);
     vector<Account> accounts = bank->get_accounts();
     for (int i = 0; i < numOfAcc; i++) accounts.at(i).display_account();
@@ -455,7 +444,6 @@ void balance_enquiry(Bank* bank) {
 void account_holders(Bank* bank) {
     cout << "----All Account Holders List----\n";
     string banner = string(101, '=') + '\n';
-    cout << banner.size() << '\n';
     cout << banner;
     string header = "Acc. No" + string(25, ' ') + 
             "Name" + string(25, ' ') + "Type" + string(25, ' ') + "Balance\n";
@@ -464,6 +452,7 @@ void account_holders(Bank* bank) {
     string buffer = "";
     vector<Account> accounts = bank->get_accounts();
     int numOfAcc = bank->get_num_of_accounts();
+    cout << "The number of accounts are: " << numOfAcc << endl;
     for (int i = 0; i < numOfAcc; i++) {
         Account* account = &accounts.at(i);
         buffer = add_details_to_string(buffer, account);
