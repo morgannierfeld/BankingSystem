@@ -5,6 +5,7 @@
 #include <exception>
 #include <sstream>
 #include <iterator>
+#include <fstream>
 
 using namespace std;
 
@@ -158,7 +159,7 @@ Bank* create_bank(int argc, char** argv, Bank* bank) {
         bank = new Bank(bankName);
         return bank;
     } else {
-        //load a bank from a save file.
+        
     }
 }
 
@@ -417,25 +418,27 @@ void quit_program(Bank* bank) {
 
 void save(Bank* bank) {
     cout << "----Save Bank Status-----\n";
-    /*cout << "Enter the name of the file: ";
+    cout << "Enter the name of the file: ";
     string fileName = get_user_input();
-    ofstream saveFile = open(fileName);
+    ofstream saveFile;
+    saveFile.open(fileName);
     if (!saveFile) {
         cerr << "Unable to open file" << endl;
         exit(1);
-    }*/
-    cout << bank->name << endl;
-    cout << bank->get_num_of_accounts() << endl;
-    cout << ACCOUNT_SEP_LINE << endl;
+    }
+    saveFile << bank->name << endl;
+    saveFile << bank->get_num_of_accounts() << endl;
+    saveFile << ACCOUNT_SEP_LINE << endl;
     int numOfAcc = bank->get_num_of_accounts();
     vector<Account> accounts = bank->get_accounts();
     for (int i = 0; i < numOfAcc; i++) {
-        cout << accounts.at(i).account_string();
+        saveFile << accounts.at(i).account_string();
         if (i != numOfAcc - 1) {
-            cout << ACCOUNT_SEP_LINE << endl;
+            saveFile << ACCOUNT_SEP_LINE << endl;
         }
     }
-    cout << "END";
+    saveFile << "END";
+    saveFile.close();
 }
 
 void handle_input(int inputNum, Bank* bank) {
