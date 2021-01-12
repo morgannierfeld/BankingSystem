@@ -369,7 +369,7 @@ void account_transaction_form(Bank* bank, bool withdraw) {
     cout << "----Account Transaction Form----\n";
     int accNum = run_question_sequence("Enter the account number: ", 
             convert_string_to_int);
-    bank->get_account(accNum)->display_account();;
+    bank->get_account(accNum)->display_account();
     float amount;
     if (!withdraw) {
         amount = run_question_sequence("Enter the amount to deposit: ", 
@@ -378,13 +378,12 @@ void account_transaction_form(Bank* bank, bool withdraw) {
     } else {
         while (true) {
             amount = run_question_sequence("Enter the amount to withdraw: ", 
-                    convert_string_to_float);
+                        convert_string_to_float);
             try {
                 bank->get_account(accNum)->decrease_balance(amount);
                 break;
-            } catch (NegativeBalanceException &e) {
-                cout << "Cannot withdraw $" << amount << endl;
-                cout << "Account has: $" << bank->get_account(accNum)->get_balance() << endl; 
+            } catch (NegativeBalanceException &nb) {
+                cout << "Insufficient funds.\n";
             }
         }
     }
@@ -441,21 +440,36 @@ void new_account(Bank* bank, string message) {
 }
 
 void deposit(Bank* bank) {
+    try {
+        account_transaction_form(bank, false);
+    } catch (AccountNotFoundException &e) {
+        end_action("Could not find the requested account.\n");
+        return;
+    }
     account_transaction_form(bank, false);
     end_action("Record Updated.\n");
 
 }
 
 void withdraw(Bank* bank) {
-    account_transaction_form(bank, true);
-    end_action("Record updated.\n");
+    try {
+        account_transaction_form(bank, true);
+        end_action("Record updated.\n");
+    } catch (AccountNotFoundException &e) {
+        end_action("Could not find the account requested\n");
+    }
 }
 
 void balance_enquiry(Bank* bank) {
     cout << "Balance Details.\n";
     int accNum = run_question_sequence("Enter the account number: ", 
             convert_string_to_int);
-    bank->get_account(accNum)->display_account();;
+    try {
+        bank->get_account(accNum)->display_account();
+    } catch (AccountNotFoundException &e) {
+        end_action("The account " + to_string(accNum) + " does not exist\n");
+        return;
+    }
     end_action("");
 }
 
@@ -470,7 +484,6 @@ void account_holders(Bank* bank) {
     string buffer = "";
     vector<Account> accounts = bank->get_accounts();
     int numOfAcc = bank->get_num_of_accounts();
-    cout << "The number of accounts are: " << numOfAcc << endl;
     for (int i = 0; i < numOfAcc; i++) {
         Account* account = &accounts.at(i);
         buffer = add_details_to_string(buffer, account);
@@ -483,15 +496,26 @@ void close_account(Bank* bank) {
     cout << "----Delete Record----\n";
     int accNum = run_question_sequence("Enter the account number: ", 
             convert_string_to_int);
-    bank->delete_account(accNum);
-    end_action("Record Deleted\n");
+    try {
+        bank->delete_account(accNum);
+        end_action("Record Deleted\n");
+    } catch (AccountNotFoundException &e) {
+        cerr << "Account " << accNum << " does not exist." << endl;
+        end_action("");
+    }
 }
 
 void modify_account(Bank* bank) {
     cout << "----Modify Record----\n";
     int accNum = run_question_sequence("Enter the Account Number: ", 
             convert_string_to_int);
-    Account* account = bank->get_account(accNum);
+    Account* account;
+    try {
+        account = bank->get_account(accNum);
+    } catch (AccountNotFoundException &e) {
+        end_action("The account " + to_string(accNum) + " does not exist\n");
+        return;
+    }
     account->display_account();;
     int newAccNum = get_account_number(bank);
     account->set_acc_number(newAccNum);
