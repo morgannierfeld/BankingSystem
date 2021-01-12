@@ -15,6 +15,10 @@ using namespace std;
 #define ACCOUNT_SEP_LINE "---------------"
 #define BAD_FILE "Unable to open file"
 #define BAD_FORMAT "File is incorrectly formatted"
+#define NORMAL_EXIT 0
+#define BAD_ARGS 1
+#define CANNOT_OPEN_FILE 2
+#define BAD_FILE_FORMAT 3
 
 /*
 Exception to handle when no account is able to be found.
@@ -376,7 +380,7 @@ void check_args(int argc) {
     if (argc != 1 && argc != 2) {
         cerr << "Incorrect number of arguments\n"
              << "Usage: ./bank savefile or ./bank\n";
-        exit(1);
+        exit(BAD_ARGS);
     }
 }
 
@@ -453,7 +457,7 @@ string getLine(ifstream* file) {
     string line;
     if (!getline(*file, line)) {
         cerr << BAD_FORMAT << endl;
-        exit(2);
+        exit(BAD_FILE_FORMAT);
     }
     return line;
 }
@@ -492,7 +496,7 @@ Bank* load_bank(string fileName) {
     loadFile.open(fileName);
     if (!loadFile) {
         cerr << BAD_FILE << endl;
-        exit(1);
+        exit(CANNOT_OPEN_FILE);
     }
     string line = getLine(&loadFile);
     Bank* bank;
@@ -501,7 +505,7 @@ Bank* load_bank(string fileName) {
     int numOfAcc = convert_string_to_int(line);
     if (numOfAcc == -1 || numOfAcc == -2) {
         cerr << BAD_FORMAT << endl;
-        exit(2);
+        exit(BAD_FILE_FORMAT);
     }
     for (int i = 0; i < numOfAcc; i++) {
         line = getLine(&loadFile);
@@ -509,34 +513,33 @@ Bank* load_bank(string fileName) {
             int accNum = convert_string_to_int(getLine(&loadFile));
             if (accNum == -1 || accNum == -2 || accNum == 0) {
                 cerr << BAD_FORMAT << endl;
-                exit(2);
+                exit(BAD_FILE_FORMAT);
             }
             string holder = getLine(&loadFile);
             if (invalid_string(holder)) {
                 cerr << BAD_FORMAT << endl;
-                exit(2);
+                exit(BAD_FILE_FORMAT);
             }
             string type = getLine(&loadFile);
             if (type.compare("S") != 0 && type.compare("C") != 0) {
                 cerr << BAD_FORMAT << endl;
-                exit(2);
+                exit(BAD_FILE_FORMAT);
             }
             float balance = convert_string_to_float(getLine(&loadFile));
             if (balance == -1 || balance == -2 || balance == 0) {
                 cerr << BAD_FILE << endl;
-                exit(2);
+                exit(BAD_FILE_FORMAT);
             }
             bank->add_account(accNum, holder, type, balance);
         } else if (line.compare("END") == 0) {
             cout << "i:" << i << endl;
             if (i != numOfAcc - 1) {
                 cerr << BAD_FORMAT << endl;
-                exit(2);
+                exit(BAD_FILE_FORMAT);
             }
         }
     }
     loadFile.close();
-    vector<Account> accounts = bank->get_accounts();
     return bank;
 }
 
@@ -691,7 +694,7 @@ void end_action(string message) {
 Performs an account transaction for either a deposit
 or a withdrawl.
 Params:
-    - bank: pointer to the bank object
+    - bank: pointer to the main bank object
     - withdraw: flag to indicate whehter the account
     transaction is a deposit or withdraw. True if
     the transaction is a withdraw, false otherwise.
@@ -802,8 +805,14 @@ string add_details_to_string(string buffer, Account* account) {
 }
 
 /*
-Determines whether or not the new account number from the use
-
+Determines whether or not the new account number from the user
+is unique and is not already in use.
+Params:
+    - accNum: number requested for the new account
+    - bank: pointer to the main bank object
+Returns:
+    - True if the requested account number is already in use
+    - False otherwise.
 */
 bool not_unique(Bank* bank, int accNum) {
     vector<Account> accounts = bank->get_accounts();
@@ -815,6 +824,15 @@ bool not_unique(Bank* bank, int accNum) {
     return false;
 }
 
+/*
+Creates a new account for the banking system. Will request user
+input regarding the account details.
+Params:
+    - bank: pointer to the main bank object
+    - message: initial message to display to the terminal.
+Returns:
+    - void
+*/
 void new_account(Bank* bank, string message) {
     cout << message;
     int accountNumber;
@@ -832,6 +850,15 @@ void new_account(Bank* bank, string message) {
     end_action("Account was set up succesfully\n");
 }
 
+/*
+Performs a deposit into the requested bank account. Will
+querry the user to get the account details, and the amount
+to deposit. If no account is found, no operation is performed.
+Params:
+    - bank: pointer to the main bank object.
+Returns:
+    - void.
+*/
 void deposit(Bank* bank) {
     try {
         account_transaction_form(bank, false);
@@ -841,6 +868,15 @@ void deposit(Bank* bank) {
     }
 }
 
+/*
+Performs a withdraw into the requested bank account. Will
+querry the user to get the account details, and the amount
+to deposit. If no account is found, no operation is performed.
+Params:
+    - bank: pointer to the main bank object.
+Returns:
+    - void.
+*/
 void withdraw(Bank* bank) {
     try {
         account_transaction_form(bank, true);
@@ -850,6 +886,15 @@ void withdraw(Bank* bank) {
     }
 }
 
+/*
+Performs the balance enquiry operation for the banking system.
+Displays all information of the requested account to the terminal.
+If no account is found, no operation is performed.
+Params:
+    - bank: pointer to the main bank object
+Returns:
+    - void
+*/
 void balance_enquiry(Bank* bank) {
     cout << "Balance Details.\n";
     int accNum = run_question_sequence("Enter the account number: ", 
@@ -863,6 +908,13 @@ void balance_enquiry(Bank* bank) {
     end_action("");
 }
 
+/*
+Displays the account information of all accounts to the terminal.
+Params:
+    - bank: pointer to the main bank object
+Returns:
+    - void
+*/
 void account_holders(Bank* bank) {
     cout << "----All Account Holders List----\n";
     string banner = string(101, '=') + '\n';
@@ -882,6 +934,15 @@ void account_holders(Bank* bank) {
     }
 }
 
+/*
+Closes a bank account. Will querry the user and retrieve
+the account informaiton. If no account can be found then
+no operation is performed.
+Params:
+    - bank: pointer to the main bank object
+Returns:
+    - void
+*/
 void close_account(Bank* bank) {
     cout << "----Delete Record----\n";
     int accNum = run_question_sequence("Enter the account number: ", 
@@ -895,6 +956,15 @@ void close_account(Bank* bank) {
     }
 }
 
+/*
+Modifies an existing bank account. All details (account no., 
+holder, type, balance) are requested from the user. If no account 
+is found, no operation is performed.
+Params:
+    - bank: pointer to the main bank object
+Returns:
+    - void
+*/
 void modify_account(Bank* bank) {
     cout << "----Modify Record----\n";
     int accNum = run_question_sequence("Enter the Account Number: ", 
@@ -918,11 +988,26 @@ void modify_account(Bank* bank) {
     end_action("Record Updated\n");
 }
 
+/*
+Quits the program when requested from the user in the main menu.
+Params:
+    - bank: pointer to the main bank object
+Returns:
+    - void
+*/
 void quit_program(Bank* bank) {
     cout << "Exiting...\n";
-    exit(0);
+    exit(NORMAL_EXIT);
 }
 
+/*
+When requested by the user in the main menu, this function saves
+the status of the bank into a text file requested by the user.
+Params:
+    - bank: pointer to the main bank object
+Returns:
+    - void
+*/
 void save(Bank* bank) {
     cout << "----Save Bank Status-----\n";
     cout << "Enter the name of the file: ";
@@ -931,7 +1016,7 @@ void save(Bank* bank) {
     saveFile.open(fileName);
     if (!saveFile) {
         cerr << BAD_FILE << endl;
-        exit(1);
+        exit(CANNOT_OPEN_FILE);
     }
     saveFile << bank->name << endl;
     saveFile << bank->get_num_of_accounts() << endl;
@@ -948,6 +1033,14 @@ void save(Bank* bank) {
     saveFile.close();
 }
 
+/*
+Function to handle the request from the user
+Params:
+    - inputNum: number which the user has selected
+    - bank: pointer to the main bank object
+Returns:
+    - void
+*/
 void handle_input(int inputNum, Bank* bank) {
     switch (inputNum) {
         case 1: new_account(bank, "----New Account Entry Form----\n"); break;
@@ -962,6 +1055,15 @@ void handle_input(int inputNum, Bank* bank) {
     }
 }
 
+/*
+Performs the main menu operation for the banking system.
+Will display the options then querry the user for their
+selection. It will then go onto to execute that operation.
+Params:
+    - bank: pointer to the main bank object
+Returns:
+    - void
+*/
 void run_bank(Bank* bank) {
     string mainMenu = "Main Menu:\n1. New Account\n2. Deposit Amount\n3. \
 Withdraw Amount\n4. Balance Enquiry\n5. All Account Holders List\n6. Close \
@@ -987,7 +1089,7 @@ int main(int argc, char** argv) {
     Bank* bank;
     bank = create_bank(argc, argv);
     run_bank(bank);
-    return 0;
+    return NORMAL_EXIT;
 }
 
 /*
