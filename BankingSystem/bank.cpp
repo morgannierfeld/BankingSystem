@@ -482,7 +482,10 @@ Loads a bank off a given filename. If there is an issue with
 the format of the file at any point. The function will cause
 the program to exit.
 Params:
-    - bank: pointer to a bank
+    - filename: name of the save file of the bank data
+Returns:
+    - A pointer to a bank object that is created within this function
+    and has all the data from the savefile loaded onto it.
 */
 Bank* load_bank(string fileName) {
     ifstream loadFile;
@@ -537,7 +540,15 @@ Bank* load_bank(string fileName) {
     return bank;
 }
 
-
+/*
+Creates a bank object based on the whether the bank
+is initialised with a save file or no save file.
+Params:
+    - argc: number of input arguments
+    - argv: for the arguments
+Returns:
+    - A pointer to a bank object created within this funciton.
+*/
 Bank* create_bank(int argc, char** argv) {
     string bankName;
     Bank* bank;
@@ -553,7 +564,17 @@ Bank* create_bank(int argc, char** argv) {
 }
 
 
-
+/*
+Functino to querry the user until they have put in the correct
+input for a number. The generic T is used for ints and floats.
+Params:
+    - message: message to display when querrying the user
+    - function pointer: represents a function that takes in a
+    string and returns a type T. Used for functions
+    convert_string_to_int and convert_string_to_float.
+Returns:
+    - Number type (float or int) of the input given by the user.
+*/
 template <typename T>
 T run_question_sequence(string message, T (*foo)(string)) {
     T num;
@@ -576,6 +597,13 @@ T run_question_sequence(string message, T (*foo)(string)) {
     return num;
 }
 
+/*
+Querries the user for the account number of the new account
+Params:
+    - Pointer to the bank object
+Returns:
+    - The int representation of the number given by the user
+*/
 int get_account_number(Bank* bank) {
     int accNum = run_question_sequence("Enter the account number: ", 
             convert_string_to_int);
@@ -583,6 +611,13 @@ int get_account_number(Bank* bank) {
 
 }
 
+/*
+Querries the user for the holder of the new account
+Params:
+    - message: message to querry the user
+Returns:
+    - String of the account holder.
+*/
 string get_account_holder(string message) {
     string accHolder;
     while (true) {
@@ -598,6 +633,14 @@ string get_account_holder(string message) {
     return accHolder;
 }
 
+/*
+Querries the user for the type of the new account
+Params:
+    - message: message to display to the user when
+    querrying them.
+Returns:
+    - String of the type of the account.
+*/
 string get_type_of_account(string message) {
     string accType;
     while (true) {
@@ -612,12 +655,31 @@ string get_type_of_account(string message) {
     return accType;
 }
 
+/*
+Querries the user for the balance of the new account
+Params:
+    - message: message to display to the user when
+    querrying them.
+Returns:
+    - Balance of the account in type float.
+*/
 float get_balance(string message) {
     float amount = run_question_sequence(message, 
             convert_string_to_float);
     return amount;
 }
 
+/*
+Function that forces the user to press enter to see
+the status of the action just completed before
+entering back to the main screen.
+Params:
+    - message: message to display to the user at
+    the end of an action (i.e. account withdrawal,
+    deposit, etc.)
+Returns:
+    - void
+*/
 void end_action(string message) {
     cout << message;
     cout << "Press enter to continue.\n";
@@ -625,6 +687,17 @@ void end_action(string message) {
     cout << string(31, '-') << endl;
 }
 
+/*
+Performs an account transaction for either a deposit
+or a withdrawl.
+Params:
+    - bank: pointer to the bank object
+    - withdraw: flag to indicate whehter the account
+    transaction is a deposit or withdraw. True if
+    the transaction is a withdraw, false otherwise.
+Returns:
+    - void
+*/
 void account_transaction_form(Bank* bank, bool withdraw) {
     cout << "----Account Transaction Form----\n";
     int accNum = run_question_sequence("Enter the account number: ", 
@@ -649,6 +722,14 @@ void account_transaction_form(Bank* bank, bool withdraw) {
     }
 }
 
+/*
+Given a string (buffer) adds the account number to this string
+Params:
+    - buffer: string to add the account number to.
+    - account: the account which the account number comes from
+Returns:
+    - The buffer string with the concatenated account number.
+*/
 string add_account_num(string buffer, Account* account) {
     int accNum = account->get_acc_num();
     string accNumStr = to_string(accNum);
@@ -657,6 +738,14 @@ string add_account_num(string buffer, Account* account) {
     return buffer;
 }
 
+/*
+Given a string (buffer) adds the account holder to this string
+Params:
+    - buffer: string to add the account holder to.
+    - account: the account which the account holder comes from
+Returns:
+    - The buffer string with the concatenated account holder.
+*/
 string add_holder(string buffer, Account* account) {
     string holder = account->get_holder();
     buffer = buffer + holder;
@@ -664,6 +753,14 @@ string add_holder(string buffer, Account* account) {
     return buffer;
 }
 
+/*
+Given a string (buffer) adds the account type to this string
+Params:
+    - buffer: string to add the account type to.
+    - account: the account which the account type comes from
+Returns:
+    - The buffer string with the concatenated account type.
+*/
 string add_type(string buffer, Account* account) {
     string type = account->get_type();
     buffer = buffer + type;
@@ -671,6 +768,14 @@ string add_type(string buffer, Account* account) {
     return buffer;
 }
 
+/*
+Given a string (buffer) adds the account balance to this string
+Params:
+    - buffer: string to add the account balance to.
+    - account: the account which the account balance comes from
+Returns:
+    - The buffer string with the concatenated account balance.
+*/
 string add_balance(string buffer, Account* account) {
     float balance = account->get_balance();
     string balanceStr = to_string(balance);
@@ -678,6 +783,16 @@ string add_balance(string buffer, Account* account) {
     return buffer;
 }
 
+/*
+Adds the details of the account to the string buffer.
+Params:
+    - buffer: string to add the account details to
+    - account: account in which the details are to
+    be added from
+Returns:
+    - The buffer string with the account details concatenated
+    onto the end of it.
+*/
 string add_details_to_string(string buffer, Account* account) {
     buffer = add_account_num(buffer, account);
     buffer = add_holder(buffer, account);
@@ -686,6 +801,10 @@ string add_details_to_string(string buffer, Account* account) {
     return buffer;
 }
 
+/*
+Determines whether or not the new account number from the use
+
+*/
 bool not_unique(Bank* bank, int accNum) {
     vector<Account> accounts = bank->get_accounts();
     for (int i = 0; i < bank->get_num_of_accounts(); i++) {
