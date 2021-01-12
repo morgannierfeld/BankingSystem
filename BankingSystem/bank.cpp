@@ -12,17 +12,64 @@ using namespace std;
 #define NAME_POS 33
 #define TYPE_POS 62
 #define BALANCE_POS 91
-#define ACCOUNT_SEP_LINE "-----------------"
+#define ACCOUNT_SEP_LINE "---------------"
 #define BAD_FILE "Unable to open file"
 #define BAD_FORMAT "File is incorrectly formatted"
 
+/*
+Exception to handle when no account is able to be found.
+*/
+struct AccountNotFoundException : public std::exception {
+    const char* what() const throw() {
+        return "Account not found";
+    }
+};
+
+/*
+Exception to handle when there is an attempt to withdraw 
+more money than the current balance.
+*/
+struct NegativeBalanceException : public std::exception {
+    const char* what() const throw() {
+        return "Withdraw will cause balance to fall below zero";
+    }
+};
+
+/*
+Exception to handle when there is an attempt to add an account
+with an account number that already exists. 
+*/
+struct AccountAlreadyExistsException : public std::exception {
+    const char* what() const throw() {
+        return "Account number already exists";
+    }
+};
+
+/*
+Object to represent a single bank account. All account numbers
+must be unique. Balances cannot be 0 or below. Holder names are
+only allowed alphabetical letters and spaces.
+*/
 class Account {
     private:
+        /*Private member variable for the account number.*/
         int accNum;
+        /*Private member variable for the account holder.*/
         string holder;
+        /*Private member variable for the account type.*/
         string type;
+        /*Private member variable for the account balance.*/
         float balance;
     public:
+        /*
+        Instantiates a new account that stores the account number,
+        holder, type and balance.
+        Params:
+            - accNum: account number
+            - holder: name of the holder of the account
+            - type: the type this account is. (S or C).
+            - balance: the balance of the account.
+        */
         Account(int accNum, string holder, string type, float balance) {
             this->accNum = accNum;
             this->holder = holder;
@@ -30,125 +77,301 @@ class Account {
             this->balance = balance;
         }
 
+        /*
+        Method to return the account number.
+        Params:
+            - void
+        Returns:
+            - Account number
+        */
         int get_acc_num(void) {
             return accNum;
         }
 
+        /*
+        Method to return the account holder
+        Params:
+            - void
+        Returns:
+            - Account holder.
+        */
         string get_holder(void) {
             return holder;
         }
 
+        /*
+        Method to return the account type
+        Params:
+            - void
+        Returns:
+            - Account type
+        */
         string get_type(void) {
             return type;
         }
 
+        /*
+        Method to return the account balance
+        Params:
+            - void
+        Returns:
+            - Account balance
+        */
         float get_balance(void) {
             return balance;
         }
 
+        /*
+        Method to set the new account number for
+        this account object after the account has 
+        been modified.
+        Params:
+            - num: new account number
+        Returns:
+            - void.
+        */
         void set_acc_number(int num) {
             accNum = num;
         }
 
+        /*
+        Method to set the new account holder for
+        this account object after the acconut has
+        been modified.
+        Params:
+            - name: new name of the acc. holder
+        Returns:
+            - void.
+        */
         void set_name(string name) {
             holder = name;
         }
 
+        /*
+        Method to set the new account holder for
+        this account object after the acconut has
+        been modified.
+        Params:
+            - name: new name of the acc. holder
+        Returns:
+            - void
+        */
         void set_acc_type(string newType) {
             type = newType;
         }
 
+        /*
+        Method to set the new account balance for
+        this account object after the acconut has
+        been modified.
+        Params:
+            - newBalance: new account balance
+        Returns:
+            - void
+        */
         void set_balance(float newBalance) {
             balance = newBalance;
         }
 
+        /*
+        Method to increase the balance after depositing
+        money into the account.
+        Params:
+            - increase: amount deposited into the account
+        Returns:
+            - void
+        */
         void increase_balance(float increase) {
-            printf("(1)\n");
             balance = balance + increase;
-            cout << "The new balance is: " << balance << '\n';
         }
 
+        /*
+        Method to decrease the balance after withdrawing
+        money from the account. 
+        Params:
+            - decrease: amount withdrawn from the account
+        Returns:
+            - void.
+        Throws:
+            - NegativeBalanceException.
+        */
         void decrease_balance(float decrease) {
             if (balance - decrease < 0) {
-                //throw exception
+                throw NegativeBalanceException();
             } else {
                 balance = balance - decrease;
             }
         }
 
+        /*
+        Method to display the account information to the terminal.
+        Params:
+            - void
+        Returns:
+            - void.
+        */
         void display_account(void) {
             cout << "---Account Status---\n";
-            cout << account_string();
+            cout << "Account Number: " << to_string(accNum) << endl;
+            cout << "Account Holder Name: " << holder << endl;
+            cout << "Type of Account: " << type << endl;
+            cout << "Balance Amount: " << to_string(balance) << endl;
         }
 
+        /*
+        Method to create a string of the account and it's information.
+        Params:
+            - void
+        Returns:
+            - string representation of this account.
+        */
         string account_string(void) {
-            string returnString = "Account Number: " + to_string(accNum) + '\n';
-            returnString = returnString + "Account Holder Name: " + holder + '\n';
-            returnString = returnString + "Type of Account: " + type + '\n';
-            returnString = returnString + "Balance Amount: " + to_string(balance) + '\n';
+            string returnString = to_string(accNum) + '\n';
+            returnString = returnString + holder + '\n';
+            returnString = returnString + type + '\n';
+            returnString = returnString + to_string(balance) + '\n';
             return returnString;
         }
 
 };
 
+/*
+Class to represent a single bank object that holds multiple
+account objects.
+*/
 class Bank {
     private:
+        /*Private member variable vector to store the bank accounts.*/
         vector<Account> accounts;
+        /*Private member variable to track the number of accounts stored for this bank.*/
         int numberOfAccounts;
 
     public:
+        /*Public member variable to store the name of the bank.*/
         string name;
 
+        /*
+        Instantiates a new Bank Object with the specified name
+        Params:
+            - name: name of the bank.
+        */
         Bank(string name) {
             this->name = name;
             numberOfAccounts = 0;
         }
 
+        /*
+        Method to add an account within the bank.
+        Params:
+            - number: account number of new account
+            - holder: holder of the new account
+            - type: type of the new account
+            - amount: initial balance of the account
+        Returns:
+            - void
+        */
         void add_account(int number, string holder, string type, float amount) {
+            for (int i = 0; i < numberOfAccounts; i++) {
+                if (accounts.at(i).get_acc_num() == number) {
+                    throw AccountAlreadyExistsException();
+                }
+            }
             Account* newAcc = new Account(number, holder, type, amount);
             accounts.push_back(*newAcc);
             numberOfAccounts++;
         }
 
+        /*
+        Given an account number, this method finds that account stored
+        within the bank and returns a pointer to that object. If no
+        such account exists with such an account number in the bank, an
+        AccountNotFoundException is thrown.
+        Params:
+            - number: Account number
+        Returns:
+            - Pointer to the account object
+        Throws:
+            - AccountNotFoundException
+        */
         Account* get_account(int number) {
             for (int i = 0; i < accounts.size(); i++) {
                 if (number == accounts.at(i).get_acc_num()) {
                     return &accounts.at(i);
                 }
             }
-            //Throw new exception if not found!
+            throw AccountNotFoundException();
         }
 
+        /*
+        Method to display all accounts to the terminal.
+        Params:
+            - void
+        Returns:
+            - void
+        */
         void display_accounts(void) {
             for (int i = 0; i < accounts.size(); i++) {
                 accounts.at(i).display_account();;
             }
         }
 
+        /*
+        Method to return the vector that stores the accounts
+        Params:
+            - void
+        Returns:
+            - The vector that stores the accounts.
+        */
         vector<Account> get_accounts(void) {
             return accounts;
         }
 
+        /*
+        Method to return the number of accounts within the bank
+        Params:
+            - void
+        Returns:
+            - Number of accounts within the bank.
+        */
         int get_num_of_accounts(void) {
             return numberOfAccounts;
         }
 
+        /*
+        Method to delete an account within the bank. If no such
+        account can be matched the requested account number than
+        an AccountNotFoundException will be thrown.
+        Params:
+            - accNum: number of the account to be deleted.
+        
+        */
         void delete_account(int accNum) {
+            bool found = false;
             for (int i = 0; i < numberOfAccounts; i++) {
                 if (accNum == accounts.at(i).get_acc_num()) {
                     accounts.erase(accounts.begin() + i);
+                    found = true;
                     break;
                 }
             }
-            numberOfAccounts--;
-            //handle account does not exist.
-        }
-
-        void set_num_of_acc(int num) {
-            numberOfAccounts = num;
+            if (found) {
+                numberOfAccounts--;
+            } else {
+                throw AccountNotFoundException();
+            }
         }
 };
 
+/*
+Function to check that the number of arguments
+put into the command line are correcnt. Function
+will exit the program if the number of args are 
+incorrect.
+Params:
+    - argc: number of arguments on the command line
+Returns:
+    - void
+*/
 void check_args(int argc) {
     if (argc != 1 && argc != 2) {
         cerr << "Incorrect number of arguments\n"
@@ -158,8 +381,14 @@ void check_args(int argc) {
 }
 
 /*
-Returns -1 if string is invalid. No negative funds can be in accounts, and no
-negative acc numbers.
+Function to convert a string representation of a number
+to type int.
+Params:
+    - numStr: string representation of a number
+Returns:
+    - The number of type int. If the number is invalid,
+    this function will return -1, else if the number is 
+    less then 0, it will return -2.
 */
 int convert_string_to_int(string numStr) {
     int number;
@@ -174,6 +403,16 @@ int convert_string_to_int(string numStr) {
     return number;
 }
 
+/*
+Function to convert a string representation of a number
+to type float.
+Params:
+    - numStr: string representation of a number
+Returns:
+    - The number of type float. If the number is invalid,
+    this function will return -1, else if the number is 
+    less then 0, it will return -2.
+*/
 float convert_string_to_float(string numStr) {
     float number;
     try {
@@ -187,22 +426,47 @@ float convert_string_to_float(string numStr) {
     return number;
 }
 
+/*
+This function gets user input from the terminal
+and returns a string of that input.
+Params:
+    - void
+Returns:
+    - A string of the user input.
+*/
 string get_user_input(void) {
     string userInput;
     getline(cin, userInput);
     return userInput;
 }
 
+/*
+Reads a single line from a file. If that file is badly
+formatted or cannot be read, this function will close
+the program.
+Params:
+    - file: pointer to the opened file to read from
+Returns:
+    - A string of the line read.
+*/
 string getLine(ifstream* file) {
     string line;
     if (!getline(*file, line)) {
         cerr << BAD_FORMAT << endl;
         exit(2);
     }
-    cout << "The line we just got was: " << line << endl;
     return line;
 }
 
+/*
+Checks to see if the given string is valid to be 
+used as a holder's name
+Params:
+    - input: string to be checked
+Returns:
+    - bool true if the string is invalid
+    - bool false if the string is valid.
+*/
 bool invalid_string(string input) {
     for (int i = 0; i < input.length(); i++) {
         if ((input[i] < 'A' || input[i] > 'Z')  && 
@@ -213,7 +477,17 @@ bool invalid_string(string input) {
     return false;
 }
 
-Bank* load_bank(Bank* bank, string fileName) {
+/*
+Loads a bank off a given filename. If there is an issue with
+the format of the file at any point. The function will cause
+the program to exit.
+Params:
+    - filename: name of the save file of the bank data
+Returns:
+    - A pointer to a bank object that is created within this function
+    and has all the data from the savefile loaded onto it.
+*/
+Bank* load_bank(string fileName) {
     ifstream loadFile;
     loadFile.open(fileName);
     if (!loadFile) {
@@ -221,80 +495,86 @@ Bank* load_bank(Bank* bank, string fileName) {
         exit(1);
     }
     string line = getLine(&loadFile);
+    Bank* bank;
     bank = new Bank(line);
     line = getLine(&loadFile);
-    printf("(1)\n");
     int numOfAcc = convert_string_to_int(line);
-    printf("(2)\n");
-    bank->set_num_of_acc(numOfAcc);
-    printf("(3)\n");
+    if (numOfAcc == -1 || numOfAcc == -2) {
+        cerr << BAD_FORMAT << endl;
+        exit(2);
+    }
     for (int i = 0; i < numOfAcc; i++) {
-        printf("(4)\n");
         line = getLine(&loadFile);
-        if (line.compare(ACCOUNT_SEP_LINE)) {
-            printf("(5)\n");
-            line = getLine(&loadFile);
-            cout << "line: " << line << endl;
-            while (!line.compare(ACCOUNT_SEP_LINE)) {
-                printf("(6)\n");
-                int accNum = convert_string_to_int(getLine(&loadFile));
-                if (accNum == -1 || accNum == -2 || accNum == 0) {
-                    cerr << BAD_FORMAT << endl;
-                    exit(2);
-                }
-                string holder = getLine(&loadFile);
-                if (invalid_string(holder)) {
-                    cerr << BAD_FORMAT << endl;
-                    exit(2);
-                }
-                string type = getLine(&loadFile);
-                if (!type.compare("S") && !type.compare("C")) {
-                    cerr << BAD_FORMAT << endl;
-                    exit(2);
-                }
-                float balance = convert_string_to_float(getLine(&loadFile));
-                if (balance == -1 || balance == -2 || balance == 0) {
-                    cerr << BAD_FILE << endl;
-                    exit(2);
-                }
-                cout << "Acc Num: " << accNum << endl;
-                cout << "Holder: " << holder << endl;
-                cout << "Type: " << type << endl;
-                cout << "Balance: " << balance << endl;
-                bank->add_account(accNum, holder, type, balance);
+        if (line.compare(ACCOUNT_SEP_LINE) == 0) {
+            int accNum = convert_string_to_int(getLine(&loadFile));
+            if (accNum == -1 || accNum == -2 || accNum == 0) {
+                cerr << BAD_FORMAT << endl;
+                exit(2);
             }
-        } else if (line.compare("END")) {
+            string holder = getLine(&loadFile);
+            if (invalid_string(holder)) {
+                cerr << BAD_FORMAT << endl;
+                exit(2);
+            }
+            string type = getLine(&loadFile);
+            if (type.compare("S") != 0 && type.compare("C") != 0) {
+                cerr << BAD_FORMAT << endl;
+                exit(2);
+            }
+            float balance = convert_string_to_float(getLine(&loadFile));
+            if (balance == -1 || balance == -2 || balance == 0) {
+                cerr << BAD_FILE << endl;
+                exit(2);
+            }
+            bank->add_account(accNum, holder, type, balance);
+        } else if (line.compare("END") == 0) {
+            cout << "i:" << i << endl;
             if (i != numOfAcc - 1) {
                 cerr << BAD_FORMAT << endl;
                 exit(2);
             }
         }
-        
     }
     loadFile.close();
-    printf("(5)\n");
-    printf("number of accounts: %d\n", numOfAcc);
     vector<Account> accounts = bank->get_accounts();
-    for (int i = 0; i < numOfAcc; i++) accounts.at(i).display_account();
     return bank;
 }
 
-
-Bank* create_bank(int argc, char** argv, Bank* bank) {
+/*
+Creates a bank object based on the whether the bank
+is initialised with a save file or no save file.
+Params:
+    - argc: number of input arguments
+    - argv: for the arguments
+Returns:
+    - A pointer to a bank object created within this funciton.
+*/
+Bank* create_bank(int argc, char** argv) {
     string bankName;
+    Bank* bank;
     if (argc == 1) {
         cout << "Enter the name of the bank: ";
         getline(cin, bankName);
         bank = new Bank(bankName);
         return bank;
     } else {
-        bank = load_bank(bank, argv[1]);
+        bank = load_bank(argv[1]);
         return bank;
     }
 }
 
 
-
+/*
+Functino to querry the user until they have put in the correct
+input for a number. The generic T is used for ints and floats.
+Params:
+    - message: message to display when querrying the user
+    - function pointer: represents a function that takes in a
+    string and returns a type T. Used for functions
+    convert_string_to_int and convert_string_to_float.
+Returns:
+    - Number type (float or int) of the input given by the user.
+*/
 template <typename T>
 T run_question_sequence(string message, T (*foo)(string)) {
     T num;
@@ -317,6 +597,13 @@ T run_question_sequence(string message, T (*foo)(string)) {
     return num;
 }
 
+/*
+Querries the user for the account number of the new account
+Params:
+    - Pointer to the bank object
+Returns:
+    - The int representation of the number given by the user
+*/
 int get_account_number(Bank* bank) {
     int accNum = run_question_sequence("Enter the account number: ", 
             convert_string_to_int);
@@ -324,6 +611,13 @@ int get_account_number(Bank* bank) {
 
 }
 
+/*
+Querries the user for the holder of the new account
+Params:
+    - message: message to querry the user
+Returns:
+    - String of the account holder.
+*/
 string get_account_holder(string message) {
     string accHolder;
     while (true) {
@@ -339,6 +633,14 @@ string get_account_holder(string message) {
     return accHolder;
 }
 
+/*
+Querries the user for the type of the new account
+Params:
+    - message: message to display to the user when
+    querrying them.
+Returns:
+    - String of the type of the account.
+*/
 string get_type_of_account(string message) {
     string accType;
     while (true) {
@@ -353,36 +655,81 @@ string get_type_of_account(string message) {
     return accType;
 }
 
+/*
+Querries the user for the balance of the new account
+Params:
+    - message: message to display to the user when
+    querrying them.
+Returns:
+    - Balance of the account in type float.
+*/
 float get_balance(string message) {
     float amount = run_question_sequence(message, 
             convert_string_to_float);
     return amount;
 }
 
+/*
+Function that forces the user to press enter to see
+the status of the action just completed before
+entering back to the main screen.
+Params:
+    - message: message to display to the user at
+    the end of an action (i.e. account withdrawal,
+    deposit, etc.)
+Returns:
+    - void
+*/
 void end_action(string message) {
     cout << message;
     cout << "Press enter to continue.\n";
     fgetc(stdin);
-    cout << "-------------------------------\n";
+    cout << string(31, '-') << endl;
 }
 
+/*
+Performs an account transaction for either a deposit
+or a withdrawl.
+Params:
+    - bank: pointer to the bank object
+    - withdraw: flag to indicate whehter the account
+    transaction is a deposit or withdraw. True if
+    the transaction is a withdraw, false otherwise.
+Returns:
+    - void
+*/
 void account_transaction_form(Bank* bank, bool withdraw) {
     cout << "----Account Transaction Form----\n";
     int accNum = run_question_sequence("Enter the account number: ", 
             convert_string_to_int);
-    bank->get_account(accNum)->display_account();;
+    bank->get_account(accNum)->display_account();
     float amount;
     if (!withdraw) {
         amount = run_question_sequence("Enter the amount to deposit: ", 
                 convert_string_to_float);
         bank->get_account(accNum)->increase_balance(amount);
     } else {
-        amount = run_question_sequence("Enter the amount to withdraw: ", 
-                convert_string_to_float);
-        bank->get_account(accNum)->decrease_balance(amount);
+        while (true) {
+            amount = run_question_sequence("Enter the amount to withdraw: ", 
+                        convert_string_to_float);
+            try {
+                bank->get_account(accNum)->decrease_balance(amount);
+                break;
+            } catch (NegativeBalanceException &nb) {
+                cout << "Insufficient funds.\n";
+            }
+        }
     }
 }
 
+/*
+Given a string (buffer) adds the account number to this string
+Params:
+    - buffer: string to add the account number to.
+    - account: the account which the account number comes from
+Returns:
+    - The buffer string with the concatenated account number.
+*/
 string add_account_num(string buffer, Account* account) {
     int accNum = account->get_acc_num();
     string accNumStr = to_string(accNum);
@@ -391,6 +738,14 @@ string add_account_num(string buffer, Account* account) {
     return buffer;
 }
 
+/*
+Given a string (buffer) adds the account holder to this string
+Params:
+    - buffer: string to add the account holder to.
+    - account: the account which the account holder comes from
+Returns:
+    - The buffer string with the concatenated account holder.
+*/
 string add_holder(string buffer, Account* account) {
     string holder = account->get_holder();
     buffer = buffer + holder;
@@ -398,6 +753,14 @@ string add_holder(string buffer, Account* account) {
     return buffer;
 }
 
+/*
+Given a string (buffer) adds the account type to this string
+Params:
+    - buffer: string to add the account type to.
+    - account: the account which the account type comes from
+Returns:
+    - The buffer string with the concatenated account type.
+*/
 string add_type(string buffer, Account* account) {
     string type = account->get_type();
     buffer = buffer + type;
@@ -405,6 +768,14 @@ string add_type(string buffer, Account* account) {
     return buffer;
 }
 
+/*
+Given a string (buffer) adds the account balance to this string
+Params:
+    - buffer: string to add the account balance to.
+    - account: the account which the account balance comes from
+Returns:
+    - The buffer string with the concatenated account balance.
+*/
 string add_balance(string buffer, Account* account) {
     float balance = account->get_balance();
     string balanceStr = to_string(balance);
@@ -412,6 +783,16 @@ string add_balance(string buffer, Account* account) {
     return buffer;
 }
 
+/*
+Adds the details of the account to the string buffer.
+Params:
+    - buffer: string to add the account details to
+    - account: account in which the details are to
+    be added from
+Returns:
+    - The buffer string with the account details concatenated
+    onto the end of it.
+*/
 string add_details_to_string(string buffer, Account* account) {
     buffer = add_account_num(buffer, account);
     buffer = add_holder(buffer, account);
@@ -420,12 +801,30 @@ string add_details_to_string(string buffer, Account* account) {
     return buffer;
 }
 
+/*
+Determines whether or not the new account number from the use
+
+*/
+bool not_unique(Bank* bank, int accNum) {
+    vector<Account> accounts = bank->get_accounts();
+    for (int i = 0; i < bank->get_num_of_accounts(); i++) {
+        if (accounts.at(i).get_acc_num() == accNum) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void new_account(Bank* bank, string message) {
     cout << message;
     int accountNumber;
     string accountHolder, accType;
     float amount;
     accountNumber = get_account_number(bank);
+    if (not_unique(bank, accountNumber)) {
+        end_action("An account with the account number " + to_string(accountNumber) + " already exists\n");
+        return;
+    }
     accountHolder = get_account_holder("Enter the name of the account holder: ");
     accType = get_type_of_account("Enter the type of the account (type 'S' for savings or 'C' for current): ");
     amount = get_balance("Enter initial amount: ");
@@ -434,28 +833,39 @@ void new_account(Bank* bank, string message) {
 }
 
 void deposit(Bank* bank) {
-    account_transaction_form(bank, false);
-    end_action("Record Updated.\n");
-
+    try {
+        account_transaction_form(bank, false);
+        end_action("Record Updated.\n");
+    } catch (AccountNotFoundException &e) {
+        end_action("Could not find the requested account.\n");
+    }
 }
 
 void withdraw(Bank* bank) {
-    account_transaction_form(bank, true);
-    end_action("Record updated.\n");
+    try {
+        account_transaction_form(bank, true);
+        end_action("Record updated.\n");
+    } catch (AccountNotFoundException &e) {
+        end_action("Could not find the account requested\n");
+    }
 }
 
 void balance_enquiry(Bank* bank) {
     cout << "Balance Details.\n";
     int accNum = run_question_sequence("Enter the account number: ", 
             convert_string_to_int);
-    bank->get_account(accNum)->display_account();;
+    try {
+        bank->get_account(accNum)->display_account();
+    } catch (AccountNotFoundException &e) {
+        end_action("The account " + to_string(accNum) + " does not exist\n");
+        return;
+    }
     end_action("");
 }
 
 void account_holders(Bank* bank) {
     cout << "----All Account Holders List----\n";
     string banner = string(101, '=') + '\n';
-    cout << banner.size() << '\n';
     cout << banner;
     string header = "Acc. No" + string(25, ' ') + 
             "Name" + string(25, ' ') + "Type" + string(25, ' ') + "Balance\n";
@@ -476,15 +886,26 @@ void close_account(Bank* bank) {
     cout << "----Delete Record----\n";
     int accNum = run_question_sequence("Enter the account number: ", 
             convert_string_to_int);
-    bank->delete_account(accNum);
-    end_action("Record Deleted\n");
+    try {
+        bank->delete_account(accNum);
+        end_action("Record Deleted\n");
+    } catch (AccountNotFoundException &e) {
+        cerr << "Account " << accNum << " does not exist." << endl;
+        end_action("");
+    }
 }
 
 void modify_account(Bank* bank) {
     cout << "----Modify Record----\n";
     int accNum = run_question_sequence("Enter the Account Number: ", 
             convert_string_to_int);
-    Account* account = bank->get_account(accNum);
+    Account* account;
+    try {
+        account = bank->get_account(accNum);
+    } catch (AccountNotFoundException &e) {
+        end_action("The account " + to_string(accNum) + " does not exist\n");
+        return;
+    }
     account->display_account();;
     int newAccNum = get_account_number(bank);
     account->set_acc_number(newAccNum);
@@ -564,15 +985,12 @@ option (1-8)\n";
 int main(int argc, char** argv) {
     check_args(argc);
     Bank* bank;
-    bank = create_bank(argc, argv, bank);
+    bank = create_bank(argc, argv);
     run_bank(bank);
     return 0;
 }
 
 /*
 To do:
-- Finish off the loading bank from save file
-- Create exceptions for account not found
-- Document code properly
-
+    - make sure that the exit statuses matched up.
 */
