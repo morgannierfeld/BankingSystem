@@ -442,13 +442,10 @@ void new_account(Bank* bank, string message) {
 void deposit(Bank* bank) {
     try {
         account_transaction_form(bank, false);
+        end_action("Record Updated.\n");
     } catch (AccountNotFoundException &e) {
         end_action("Could not find the requested account.\n");
-        return;
     }
-    account_transaction_form(bank, false);
-    end_action("Record Updated.\n");
-
 }
 
 void withdraw(Bank* bank) {
