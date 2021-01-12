@@ -1091,8 +1091,3 @@ int main(int argc, char** argv) {
     run_bank(bank);
     return NORMAL_EXIT;
 }
-
-/*
-To do:
-    - make sure that the exit statuses matched up.
-*/
