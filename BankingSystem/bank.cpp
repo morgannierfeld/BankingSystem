@@ -625,21 +625,31 @@ string add_details_to_string(string buffer, Account* account) {
     return buffer;
 }
 
+bool not_unique(Bank* bank, int accNum) {
+    vector<Account> accounts = bank->get_accounts();
+    for (int i = 0; i < bank->get_num_of_accounts(); i++) {
+        if (accounts.at(i).get_acc_num() == accNum) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void new_account(Bank* bank, string message) {
     cout << message;
     int accountNumber;
     string accountHolder, accType;
     float amount;
     accountNumber = get_account_number(bank);
+    if (not_unique(bank, accountNumber)) {
+        end_action("An account with the account number " + to_string(accountNumber) + " already exists\n");
+        return;
+    }
     accountHolder = get_account_holder("Enter the name of the account holder: ");
     accType = get_type_of_account("Enter the type of the account (type 'S' for savings or 'C' for current): ");
     amount = get_balance("Enter initial amount: ");
-    try {
-        bank->add_account(accountNumber, accountHolder, accType, amount);
-        end_action("Account was set up succesfully\n");
-    } catch (AccountAlreadyExistsException &e) {
-        end_action("An account with the account number " + to_string(accountNumber) + " already exists\n");
-    }
+    bank->add_account(accountNumber, accountHolder, accType, amount);
+    end_action("Account was set up succesfully\n");
 }
 
 void deposit(Bank* bank) {
