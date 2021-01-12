@@ -362,6 +362,16 @@ class Bank {
         }
 };
 
+/*
+Function to check that the number of arguments
+put into the command line are correcnt. Function
+will exit the program if the number of args are 
+incorrect.
+Params:
+    - argc: number of arguments on the command line
+Returns:
+    - void
+*/
 void check_args(int argc) {
     if (argc != 1 && argc != 2) {
         cerr << "Incorrect number of arguments\n"
@@ -371,8 +381,14 @@ void check_args(int argc) {
 }
 
 /*
-Returns -1 if string is invalid. No negative funds can be in accounts, and no
-negative acc numbers.
+Function to convert a string representation of a number
+to type int.
+Params:
+    - numStr: string representation of a number
+Returns:
+    - The number of type int. If the number is invalid,
+    this function will return -1, else if the number is 
+    less then 0, it will return -2.
 */
 int convert_string_to_int(string numStr) {
     int number;
@@ -387,6 +403,16 @@ int convert_string_to_int(string numStr) {
     return number;
 }
 
+/*
+Function to convert a string representation of a number
+to type float.
+Params:
+    - numStr: string representation of a number
+Returns:
+    - The number of type float. If the number is invalid,
+    this function will return -1, else if the number is 
+    less then 0, it will return -2.
+*/
 float convert_string_to_float(string numStr) {
     float number;
     try {
@@ -400,12 +426,29 @@ float convert_string_to_float(string numStr) {
     return number;
 }
 
+/*
+This function gets user input from the terminal
+and returns a string of that input.
+Params:
+    - void
+Returns:
+    - A string of the user input.
+*/
 string get_user_input(void) {
     string userInput;
     getline(cin, userInput);
     return userInput;
 }
 
+/*
+Reads a single line from a file. If that file is badly
+formatted or cannot be read, this function will close
+the program.
+Params:
+    - file: pointer to the opened file to read from
+Returns:
+    - A string of the line read.
+*/
 string getLine(ifstream* file) {
     string line;
     if (!getline(*file, line)) {
@@ -415,6 +458,15 @@ string getLine(ifstream* file) {
     return line;
 }
 
+/*
+Checks to see if the given string is valid to be 
+used as a holder's name
+Params:
+    - input: string to be checked
+Returns:
+    - bool true if the string is invalid
+    - bool false if the string is valid.
+*/
 bool invalid_string(string input) {
     for (int i = 0; i < input.length(); i++) {
         if ((input[i] < 'A' || input[i] > 'Z')  && 
@@ -425,7 +477,14 @@ bool invalid_string(string input) {
     return false;
 }
 
-Bank* load_bank(Bank* bank, string fileName) {
+/*
+Loads a bank off a given filename. If there is an issue with
+the format of the file at any point. The function will cause
+the program to exit.
+Params:
+    - bank: pointer to a bank
+*/
+Bank* load_bank(string fileName) {
     ifstream loadFile;
     loadFile.open(fileName);
     if (!loadFile) {
@@ -433,6 +492,7 @@ Bank* load_bank(Bank* bank, string fileName) {
         exit(1);
     }
     string line = getLine(&loadFile);
+    Bank* bank;
     bank = new Bank(line);
     line = getLine(&loadFile);
     int numOfAcc = convert_string_to_int(line);
@@ -478,15 +538,16 @@ Bank* load_bank(Bank* bank, string fileName) {
 }
 
 
-Bank* create_bank(int argc, char** argv, Bank* bank) {
+Bank* create_bank(int argc, char** argv) {
     string bankName;
+    Bank* bank;
     if (argc == 1) {
         cout << "Enter the name of the bank: ";
         getline(cin, bankName);
         bank = new Bank(bankName);
         return bank;
     } else {
-        bank = load_bank(bank, argv[1]);
+        bank = load_bank(argv[1]);
         return bank;
     }
 }
@@ -805,7 +866,12 @@ option (1-8)\n";
 int main(int argc, char** argv) {
     check_args(argc);
     Bank* bank;
-    bank = create_bank(argc, argv, bank);
+    bank = create_bank(argc, argv);
     run_bank(bank);
     return 0;
 }
+
+/*
+To do:
+    - make sure that the exit statuses matched up.
+*/
