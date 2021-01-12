@@ -16,25 +16,60 @@ using namespace std;
 #define BAD_FILE "Unable to open file"
 #define BAD_FORMAT "File is incorrectly formatted"
 
+/*
+Exception to handle when no account is able to be found.
+*/
 struct AccountNotFoundException : public std::exception {
     const char* what() const throw() {
         return "Account not found";
     }
 };
 
+/*
+Exception to handle when there is an attempt to withdraw 
+more money than the current balance.
+*/
 struct NegativeBalanceException : public std::exception {
     const char* what() const throw() {
         return "Withdraw will cause balance to fall below zero";
     }
 };
 
+/*
+Exception to handle when there is an attempt to add an account
+with an account number that already exists. 
+*/
+struct AccountAlreadyExistsException : public std::exception {
+    const char* what() const throw() {
+        return "Account number already exists";
+    }
+};
+
+/*
+Object to represent a single bank account. All account numbers
+must be unique. Balances cannot be 0 or below. Holder names are
+only allowed alphabetical letters and spaces.
+*/
 class Account {
     private:
+        /*Private member variable for the account number.*/
         int accNum;
+        /*Private member variable for the account holder.*/
         string holder;
+        /*Private member variable for the account type.*/
         string type;
+        /*Private member variable for the account balance.*/
         float balance;
     public:
+        /*
+        Instantiates a new account that stores the account number,
+        holder, type and balance.
+        Params:
+            - accNum: account number
+            - holder: name of the holder of the account
+            - type: the type this account is. (S or C).
+            - balance: the balance of the account.
+        */
         Account(int accNum, string holder, string type, float balance) {
             this->accNum = accNum;
             this->holder = holder;
@@ -42,42 +77,124 @@ class Account {
             this->balance = balance;
         }
 
+        /*
+        Method to return the account number.
+        Params:
+            - void
+        Returns:
+            - Account number
+        */
         int get_acc_num(void) {
             return accNum;
         }
 
+        /*
+        Method to return the account holder
+        Params:
+            - void
+        Returns:
+            - Account holder.
+        */
         string get_holder(void) {
             return holder;
         }
 
+        /*
+        Method to return the account type
+        Params:
+            - void
+        Returns:
+            - Account type
+        */
         string get_type(void) {
             return type;
         }
 
+        /*
+        Method to return the account balance
+        Params:
+            - void
+        Returns:
+            - Account balance
+        */
         float get_balance(void) {
             return balance;
         }
 
+        /*
+        Method to set the new account number for
+        this account object after the account has 
+        been modified.
+        Params:
+            - num: new account number
+        Returns:
+            - void.
+        */
         void set_acc_number(int num) {
             accNum = num;
         }
 
+        /*
+        Method to set the new account holder for
+        this account object after the acconut has
+        been modified.
+        Params:
+            - name: new name of the acc. holder
+        Returns:
+            - void.
+        */
         void set_name(string name) {
             holder = name;
         }
 
+        /*
+        Method to set the new account holder for
+        this account object after the acconut has
+        been modified.
+        Params:
+            - name: new name of the acc. holder
+        Returns:
+            - void
+        */
         void set_acc_type(string newType) {
             type = newType;
         }
 
+        /*
+        Method to set the new account balance for
+        this account object after the acconut has
+        been modified.
+        Params:
+            - newBalance: new account balance
+        Returns:
+            - void
+        */
         void set_balance(float newBalance) {
             balance = newBalance;
         }
 
+        /*
+        Method to increase the balance after depositing
+        money into the account.
+        Params:
+            - increase: amount deposited into the account
+        Returns:
+            - void
+        */
         void increase_balance(float increase) {
             balance = balance + increase;
         }
 
+        /*
+        Method to decrease the balance after withdrawing
+        money from the account. 
+        Params:
+            - decrease: amount withdrawn from the account
+        Returns:
+            - void.
+        Throws:
+            - NegativeBalanceException.
+        */
         void decrease_balance(float decrease) {
             if (balance - decrease < 0) {
                 throw NegativeBalanceException();
@@ -86,6 +203,13 @@ class Account {
             }
         }
 
+        /*
+        Method to display the account information to the terminal.
+        Params:
+            - void
+        Returns:
+            - void.
+        */
         void display_account(void) {
             cout << "---Account Status---\n";
             cout << "Account Number: " << to_string(accNum) << endl;
@@ -94,6 +218,13 @@ class Account {
             cout << "Balance Amount: " << to_string(balance) << endl;
         }
 
+        /*
+        Method to create a string of the account and it's information.
+        Params:
+            - void
+        Returns:
+            - string representation of this account.
+        */
         string account_string(void) {
             string returnString = to_string(accNum) + '\n';
             returnString = returnString + holder + '\n';
@@ -104,25 +235,64 @@ class Account {
 
 };
 
+/*
+Class to represent a single bank object that holds multiple
+account objects.
+*/
 class Bank {
     private:
+        /*Private member variable vector to store the bank accounts.*/
         vector<Account> accounts;
+        /*Private member variable to track the number of accounts stored for this bank.*/
         int numberOfAccounts;
 
     public:
+        /*Public member variable to store the name of the bank.*/
         string name;
 
+        /*
+        Instantiates a new Bank Object with the specified name
+        Params:
+            - name: name of the bank.
+        */
         Bank(string name) {
             this->name = name;
             numberOfAccounts = 0;
         }
 
+        /*
+        Method to add an account within the bank.
+        Params:
+            - number: account number of new account
+            - holder: holder of the new account
+            - type: type of the new account
+            - amount: initial balance of the account
+        Returns:
+            - void
+        */
         void add_account(int number, string holder, string type, float amount) {
+            for (int i = 0; i < numberOfAccounts; i++) {
+                if (accounts.at(i).get_acc_num() == number) {
+                    throw AccountAlreadyExistsException();
+                }
+            }
             Account* newAcc = new Account(number, holder, type, amount);
             accounts.push_back(*newAcc);
             numberOfAccounts++;
         }
 
+        /*
+        Given an account number, this method finds that account stored
+        within the bank and returns a pointer to that object. If no
+        such account exists with such an account number in the bank, an
+        AccountNotFoundException is thrown.
+        Params:
+            - number: Account number
+        Returns:
+            - Pointer to the account object
+        Throws:
+            - AccountNotFoundException
+        */
         Account* get_account(int number) {
             for (int i = 0; i < accounts.size(); i++) {
                 if (number == accounts.at(i).get_acc_num()) {
@@ -132,20 +302,49 @@ class Bank {
             throw AccountNotFoundException();
         }
 
+        /*
+        Method to display all accounts to the terminal.
+        Params:
+            - void
+        Returns:
+            - void
+        */
         void display_accounts(void) {
             for (int i = 0; i < accounts.size(); i++) {
                 accounts.at(i).display_account();;
             }
         }
 
+        /*
+        Method to return the vector that stores the accounts
+        Params:
+            - void
+        Returns:
+            - The vector that stores the accounts.
+        */
         vector<Account> get_accounts(void) {
             return accounts;
         }
 
+        /*
+        Method to return the number of accounts within the bank
+        Params:
+            - void
+        Returns:
+            - Number of accounts within the bank.
+        */
         int get_num_of_accounts(void) {
             return numberOfAccounts;
         }
 
+        /*
+        Method to delete an account within the bank. If no such
+        account can be matched the requested account number than
+        an AccountNotFoundException will be thrown.
+        Params:
+            - accNum: number of the account to be deleted.
+        
+        */
         void delete_account(int accNum) {
             bool found = false;
             for (int i = 0; i < numberOfAccounts; i++) {
@@ -435,8 +634,12 @@ void new_account(Bank* bank, string message) {
     accountHolder = get_account_holder("Enter the name of the account holder: ");
     accType = get_type_of_account("Enter the type of the account (type 'S' for savings or 'C' for current): ");
     amount = get_balance("Enter initial amount: ");
-    bank->add_account(accountNumber, accountHolder, accType, amount);
-    end_action("Account was set up succesfully\n");
+    try {
+        bank->add_account(accountNumber, accountHolder, accType, amount);
+        end_action("Account was set up succesfully\n");
+    } catch (AccountAlreadyExistsException &e) {
+        end_action("An account with the account number " + to_string(accountNumber) + " already exists\n");
+    }
 }
 
 void deposit(Bank* bank) {
@@ -596,8 +799,3 @@ int main(int argc, char** argv) {
     run_bank(bank);
     return 0;
 }
-
-/*
-To do:
-- Document code properly
-*/
