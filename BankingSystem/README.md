@@ -3,7 +3,7 @@ This project is an adaptation from the website cppforschool.com (http://www.cppf
 Refer to the youtube video in the link for a main demonstration of the banking system.
 
 There have been some additions to the functionality:
-* Error handling for incorrect input or false input.
+* Error handling for incorrect or false input.
 * Users have the ability to load a pre-existing bank through a save file from the command line.
 * Incorrectly formated files will be rejected.
 * Users can save the status of the bank into a seperate file.
