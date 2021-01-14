@@ -10,6 +10,9 @@ There have been some additions to the functionality:
 
 ## Running this file.
 After running the command make, a bank executable file will be created.
+
 To run the program the following can be put into the command line:
+
 ./bank or ./bank savefile.txt
+
 An example of a savefile has been provided.
